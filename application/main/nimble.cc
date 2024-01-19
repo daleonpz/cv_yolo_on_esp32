@@ -1,24 +1,18 @@
 #include "nimble.h"
+
+#include <string>
 /** GATT server. */
 #define GATT_SVR_SVC_ALERT_UUID               0x1811
-#define GATT_SVR_CHR_SUP_NEW_ALERT_CAT_UUID   0x2A47
-#define GATT_SVR_CHR_NEW_ALERT                0x2A46
-#define GATT_SVR_CHR_SUP_UNR_ALERT_CAT_UUID   0x2A48
-#define GATT_SVR_CHR_UNR_ALERT_STAT_UUID      0x2A45
-#define GATT_SVR_CHR_ALERT_NOT_CTRL_PT        0x2A44
 
-static const char *tag = "NimBLE_BLE_PRPH";
+static const char *tag = "BLE NIMBLE";
 static uint8_t own_addr_type;
 static esp_err_t ret;
-uint16_t control_notif_handle;
-uint16_t notification_handle;
-uint16_t conn_handle;
-//!! When client subscribe to notifications, the value is set to 1.Check this value before sending notifictions.
-bool notify_enable = false;
-TaskHandle_t xHandleTaskNimble = NULL;
-//! You will set this value and send it as notification
-// static std::string notification = "Hello There";
-char notification[] = "Hello There";
+static uint16_t control_notif_handle;
+static uint16_t notification_handle;
+static uint16_t conn_handle;
+
+static bool notify_enable = false;
+static std::string notification = "Hello There";
 
 // GATT Server Service,         B2BBC642-46DA-11ED-B878-0242AC120002
 static const ble_uuid128_t gatt_svr_svc_uuid =
@@ -30,9 +24,6 @@ static const ble_uuid16_t gatt_svr_chr_uuid16 = BLE_UUID16_INIT(GATT_SVR_SVC_ALE
 static const ble_uuid128_t gatt_svr_chr_uuid =
 BLE_UUID128_INIT(0x02, 0x00, 0x12, 0xac, 0x42, 0x02, 0x78, 0xb8, 0xed, 0x11, 0xde, 0x46, 0x76, 0x9c, 0xaf, 0xc9);
 
-//@_____Some variables used in service and characteristic declaration______
-char characteristic_value[50] = "I am characteristic value"; //!! When client read characteristic, he get this value. You can also set this value in your code.
-char characteristic_received_value[500];                     //!! When client write to characteristic , he set value of this. You can read it in code.
 uint16_t min_length = 1;   //!! minimum length the client can write to a characterstic
 uint16_t max_length = 700; //!! maximum length the client can write to a characterstic
 
@@ -85,6 +76,7 @@ static int gatt_svr_chr_access(uint16_t conn_handle, uint16_t attr_handle,
 {
     int rc;
 
+    //TODO: add name to service and characteristic
     switch (ctxt->op) {
         // In case user accessed this characterstic to read its value, bellow lines will execute
         case BLE_GATT_ACCESS_OP_READ_CHR: 
@@ -92,19 +84,18 @@ static int gatt_svr_chr_access(uint16_t conn_handle, uint16_t attr_handle,
             // and a pointer which is used to “chain” memory blocks together in order to create a “packet”. 
             // This is a very important aspect of the mbuf: 
             //              the ability to chain mbufs together to create larger “packets” (chains of mbufs)
-            rc = os_mbuf_append(ctxt->om, &characteristic_value, sizeof characteristic_value);
+            std::string characteristic_value = "I am characteristic value";
+            rc = os_mbuf_append(ctxt->om, characteristic_value.c_str(), characteristic_value.size());
             return rc == 0 ? 0 : BLE_ATT_ERR_INSUFFICIENT_RES;
 
         case BLE_GATT_ACCESS_OP_WRITE_CHR: 
+            char characteristic_received_value[50];
             rc = gatt_svr_chr_write(ctxt->om, 
                     min_length, max_length, 
-                    &characteristic_received_value, NULL); 
-            printf("Received=%s\n", characteristic_received_value);  // Print the received value
-                                                                     //! Use received value in you code. For example
-            {
-                if( strcmp(characteristic_received_value, "stop") == 0){
-                    stopBLE();
-                }
+                    &characteristic_received_value, NULL);
+            ESP_LOGI(tag, "Received=%s\n", characteristic_received_value);  // Print the received value
+            if( strcmp(characteristic_received_value, "stop") == 0){
+                stopBLE();
             }
             return rc;
         default:
@@ -121,8 +112,7 @@ void sendNotification() {
 
     if (notify_enable){
         // Value of variable "notification" will be sent as notification.
-        om = ble_hs_mbuf_from_flat(notification, sizeof(notification)); 
-//         om = ble_hs_mbuf_from_flat(notification.c_str(), notification.length());
+        om = ble_hs_mbuf_from_flat(notification.c_str(), notification.length());
         rc = ble_gattc_notify_custom(conn_handle, notification_handle, om);
 
         if (rc != 0) {
@@ -140,8 +130,7 @@ void vTasksendNotification(void *pvParameters) {
     while (1)
     {
         if (notify_enable)  {
-            om = ble_hs_mbuf_from_flat(notification, sizeof(notification));
-//             om = ble_hs_mbuf_from_flat(notification.c_str(), notification.length());
+            om = ble_hs_mbuf_from_flat(notification.c_str(), notification.length());
             rc = ble_gattc_notify_custom(conn_handle, notification_handle, om);
             printf("\n rc=%d\n", rc);
 
@@ -171,15 +160,9 @@ void startBLE() {
     ble_hs_cfg.gatts_register_cb = gatt_svr_register_cb;
     ble_hs_cfg.store_status_cb = ble_store_util_status_rr;
 
-    ble_hs_cfg.sm_io_cap = BLE_SM_IO_CAP_NO_IO;
-#ifdef CONFIG_EXAMPLE_MITM
-    ble_hs_cfg.sm_mitm = 1;
-#endif
-// #ifdef CONFIG_EXAMPLE_USE_SC
-    ble_hs_cfg.sm_sc = 1;
-// #else
-//     ble_hs_cfg.sm_sc = 0;
-// #endif
+    ble_hs_cfg.sm_io_cap = BLE_SM_IO_CAP_NO_IO; // No I/O capabilities
+    ble_hs_cfg.sm_mitm = 1; // Man in the middle protection
+    ble_hs_cfg.sm_sc = 1; // Secure connections
 
     rc = gatt_svr_init();
     assert(rc == 0);
@@ -188,10 +171,7 @@ void startBLE() {
     rc = ble_svc_gap_device_name_set("nimble-ble"); //!! Set the name of this device
     assert(rc == 0);
 
-    /* XXX Need to have template for store */
-
     nimble_port_freertos_init(bleprph_host_task);
-    printf("characteristic_value at end of startBLE=%s\n", characteristic_value);
 }
 
 
