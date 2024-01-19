@@ -1,31 +1,22 @@
 #include "nimble.h"
 
 #include <string>
-/** GATT server. */
-#define GATT_SVR_SVC_ALERT_UUID               0x1811
 
 static const char *tag = "BLE NIMBLE";
 static uint8_t own_addr_type;
 static esp_err_t ret;
-static uint16_t control_notif_handle;
 static uint16_t notification_handle;
 static uint16_t conn_handle;
 
 static bool notify_enable = false;
-static std::string notification = "Hello There";
 
 // GATT Server Service,         B2BBC642-46DA-11ED-B878-0242AC120002
 static const ble_uuid128_t gatt_svr_svc_uuid =
 BLE_UUID128_INIT(0x02, 0x00, 0x12, 0xac, 0x42, 0x02, 0x78, 0xb8, 0xed, 0x11, 0xda, 0x46, 0x42, 0xc6, 0xbb, 0xb2);
 
-static const ble_uuid16_t gatt_svr_chr_uuid16 = BLE_UUID16_INIT(GATT_SVR_SVC_ALERT_UUID);
-
 // GATT Server Characteristic , C9AF9C76-46DE-11ED-B878-0242AC120002
 static const ble_uuid128_t gatt_svr_chr_uuid =
 BLE_UUID128_INIT(0x02, 0x00, 0x12, 0xac, 0x42, 0x02, 0x78, 0xb8, 0xed, 0x11, 0xde, 0x46, 0x76, 0x9c, 0xaf, 0xc9);
-
-uint16_t min_length = 1;   //!! minimum length the client can write to a characterstic
-uint16_t max_length = 700; //!! maximum length the client can write to a characterstic
 
 //@_____________Forward declaration of some functions ___________
 void ble_store_config_init(void);
@@ -72,30 +63,37 @@ static const struct ble_gatt_svc_def gatt_svr_svcs[] = {
 
 static int gatt_svr_chr_access(uint16_t conn_handle, uint16_t attr_handle,
         struct ble_gatt_access_ctxt *ctxt,
-        void *arg) 
-{
+        void *arg) {
     int rc;
 
     //TODO: add name to service and characteristic
     switch (ctxt->op) {
         // In case user accessed this characterstic to read its value, bellow lines will execute
         case BLE_GATT_ACCESS_OP_READ_CHR: 
+            {
             // In its simplest form, an mbuf is a memory block with some space reserved for internal information 
             // and a pointer which is used to “chain” memory blocks together in order to create a “packet”. 
             // This is a very important aspect of the mbuf: 
             //              the ability to chain mbufs together to create larger “packets” (chains of mbufs)
-            std::string characteristic_value = "I am characteristic value";
-            rc = os_mbuf_append(ctxt->om, characteristic_value.c_str(), characteristic_value.size());
+                std::string characteristic_value = "I am characteristic value";
+                rc = os_mbuf_append(ctxt->om, characteristic_value.c_str(), characteristic_value.size());
+            }
             return rc == 0 ? 0 : BLE_ATT_ERR_INSUFFICIENT_RES;
 
         case BLE_GATT_ACCESS_OP_WRITE_CHR: 
-            char characteristic_received_value[50];
-            rc = gatt_svr_chr_write(ctxt->om, 
-                    min_length, max_length, 
-                    &characteristic_received_value, NULL);
-            ESP_LOGI(tag, "Received=%s\n", characteristic_received_value);  // Print the received value
-            if( strcmp(characteristic_received_value, "stop") == 0){
-                stopBLE();
+            {
+                char characteristic_received_value[50];
+                // Minimum and maximum length the client can write to a characterstic
+                uint16_t min_length = 1;
+                uint16_t max_length = 700;
+
+                rc = gatt_svr_chr_write(ctxt->om, 
+                        min_length, max_length, 
+                        &characteristic_received_value, NULL);
+                ESP_LOGI(tag, "Received=%s\n", characteristic_received_value);  // Print the received value
+                if( strcmp(characteristic_received_value, "stop") == 0){
+                    stopBLE();
+                }
             }
             return rc;
         default:
@@ -107,38 +105,21 @@ static int gatt_svr_chr_access(uint16_t conn_handle, uint16_t attr_handle,
 void sendNotification() {
     int rc;
     struct os_mbuf *om;
+    std::string notification = "Hello There";
+    om = ble_hs_mbuf_from_flat(notification.c_str(), notification.length());
+    rc = ble_gattc_notify_custom(conn_handle, notification_handle, om);
 
-    // This value is checked so that we don't send notifications if user has not subscribed to our notification handle.
-
-    if (notify_enable){
-        // Value of variable "notification" will be sent as notification.
-        om = ble_hs_mbuf_from_flat(notification.c_str(), notification.length());
-        rc = ble_gattc_notify_custom(conn_handle, notification_handle, om);
-
-        if (rc != 0) {
-            printf("\n error notifying; rc\n");
-        }
-    }
-    else {
-        printf("user not subscribed to notifications.\n");
+    if (rc != 0) {
+        printf("\n error notifying; rc\n");
     }
 }
 
 void vTasksendNotification(void *pvParameters) {
-    int rc;
-    struct os_mbuf *om;
     while (1)
     {
         if (notify_enable)  {
-            om = ble_hs_mbuf_from_flat(notification.c_str(), notification.length());
-            rc = ble_gattc_notify_custom(conn_handle, notification_handle, om);
-            printf("\n rc=%d\n", rc);
-
-            if (rc != 0) {
-                printf("\n error notifying; rc\n");
-            }
-        }
-        else {
+            sendNotification();
+        } else {
             printf("No one subscribed to notifications\n");
         }
         vTaskDelay(2000 / portTICK_PERIOD_MS);
@@ -320,8 +301,7 @@ bleprph_advertise(void)
      *     o Discoverability in forthcoming advertisement (general)
      *     o BLE-only (BR/EDR unsupported).
      */
-    fields.flags = BLE_HS_ADV_F_DISC_GEN |
-        BLE_HS_ADV_F_BREDR_UNSUP;
+    fields.flags = BLE_HS_ADV_F_DISC_GEN | BLE_HS_ADV_F_BREDR_UNSUP;
 
     /* Indicate that the TX power level field should be included; have the
      * stack fill this value automatically.  This is done by assigning the
@@ -335,13 +315,15 @@ bleprph_advertise(void)
     fields.name_len = strlen(name);
     fields.name_is_complete = 1;
 
-//     fields.uuids128 = &gatt_svr_svc_uuid;
+    // TODO: for some reason, this doesn't work
+//     ble_uuid128_t uuid128_array[1] = {gatt_svr_svc_uuid};
+//     fields.uuids128 = uuid128_array;
 //     fields.num_uuids128 = 1;
-//     fields.uuids128_is_complete = 1;
-//     fields.uuids16 = (ble_uuid16_t[]){BLE_UUID16_INIT(GATT_SVR_SVC_ALERT_UUID)};
+//     fields.uuids128_is_complete = 0;
+//     
+    const ble_uuid16_t gatt_svr_chr_uuid16 = BLE_UUID16_INIT(0x0001);
     ble_uuid16_t uuid_array[1] = {gatt_svr_chr_uuid16};
     fields.uuids16 = uuid_array;
-//     fields.uuids16 = (ble_uuid16_t[]){gatt_svr_chr_uuid16};
     fields.num_uuids16 = 1;
     fields.uuids16_is_complete = 1;
 
