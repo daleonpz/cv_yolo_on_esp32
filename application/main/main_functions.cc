@@ -15,10 +15,9 @@ limitations under the License.
 
 #include "main_functions.h"
 
-#include "detection_responder.h"
+#include "model_utils.h"
 #include "image_provider.h"
 #include "model_settings.h"
-#include "model_utils.h"
 #include "person_detect_model_data.h"
 #include "tensorflow/lite/micro/micro_interpreter.h"
 #include "tensorflow/lite/micro/micro_log.h"
@@ -31,7 +30,6 @@ limitations under the License.
 #include <esp_heap_caps.h>
 #include <esp_timer.h>
 #include <esp_log.h>
-#include "esp_main.h"
 
 // Globals, used for compatibility with Arduino-style sketches.
 namespace {
@@ -46,18 +44,9 @@ TfLiteTensor* input = nullptr;
 // signed 8-bit integers is to subtract 128 from the unsigned value to get a
 // signed value.
 
-#ifdef CONFIG_IDF_TARGET_ESP32S3
-constexpr int scratchBufSize = 39 * 1024;
-#else
-constexpr int scratchBufSize = 0;
-#endif
 // An area of memory to use for input, output, and intermediate arrays.
-// constexpr int kTensorArenaSize = 100 * 1024 + scratchBufSize;
-constexpr int kTensorArenaSize = 80 * 1024 + scratchBufSize;
+constexpr int kTensorArenaSize = 81 * 1024 ;
 static uint8_t *tensor_arena;//[kTensorArenaSize]; // Maybe we should move this to external
-
-constexpr float kConfidenceThreshold = 0.5;
-constexpr float kIoUThreshold = 0.3;
 }  // namespace
 
 // The name of this function is important for Arduino compatibility.
@@ -72,10 +61,6 @@ void setup() {
   }
 
   if (tensor_arena == NULL) {
-      printf("%s: free RAM size: %d, INTERNAL: %d, PSRAM: %d\n", "tag", 
-              heap_caps_get_free_size(MALLOC_CAP_8BIT), 
-              heap_caps_get_free_size(MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL), 
-              heap_caps_get_free_size(MALLOC_CAP_8BIT | MALLOC_CAP_SPIRAM));
     tensor_arena = (uint8_t *) heap_caps_malloc(kTensorArenaSize, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
   }
   if (tensor_arena == NULL) {
@@ -83,7 +68,6 @@ void setup() {
     return;
   }
 
-  MicroPrintf("Memory arena allocated\n");
   // Pull in only the operation implementations we need.
   // This relies on a complete list of all the ops needed by this graph.
   // An easier approach is to just use the AllOpsResolver, but this will
@@ -92,17 +76,12 @@ void setup() {
   //
   // tflite::AllOpsResolver resolver;
   // NOLINTNEXTLINE(runtime-global-variables)
-  static tflite::MicroMutableOpResolver<10> micro_op_resolver;
-  micro_op_resolver.AddQuantize();
-  micro_op_resolver.AddPad();
+  static tflite::MicroMutableOpResolver<5> micro_op_resolver;
+  micro_op_resolver.AddAveragePool2D();
   micro_op_resolver.AddConv2D();
-  micro_op_resolver.AddLogistic();
-  micro_op_resolver.AddMul();
-  micro_op_resolver.AddConcatenation();
-  micro_op_resolver.AddMaxPool2D();
-  micro_op_resolver.AddAdd();
+  micro_op_resolver.AddDepthwiseConv2D();
   micro_op_resolver.AddReshape();
-  micro_op_resolver.AddStridedSlice();
+  micro_op_resolver.AddSoftmax();
 
   // Build an interpreter to run the model with.
   // NOLINTNEXTLINE(runtime-global-variables)
@@ -120,45 +99,29 @@ void setup() {
   // Get information about the memory area to use for the model's input.
   input = interpreter->input(0);
 
-#ifndef CLI_ONLY_INFERENCE
   // Initialize Camera
   TfLiteStatus init_status = InitCamera();
   if (init_status != kTfLiteOk) {
     MicroPrintf("InitCamera failed\n");
     return;
   }
-#endif
 }
 
+static portMUX_TYPE my_spinlock = portMUX_INITIALIZER_UNLOCKED;
 #ifndef CLI_ONLY_INFERENCE
 // The name of this function is important for Arduino compatibility.
 void loop() {
-  MicroPrintf("Inference loop started\n");
   // Get image from provider.
-  if (kTfLiteOk != GetImage(kNumCols, kNumRows, kNumChannels, input->data.uint8)) {
+  if (kTfLiteOk != GetImage(kNumCols, kNumRows, kNumChannels, input->data.int8)) {
     MicroPrintf("Image capture failed.");
   }
-
-  unsigned detect_time;
-  detect_time = esp_timer_get_time();
 
   // Run the model on this input and make sure it succeeds.
   if (kTfLiteOk != interpreter->Invoke()) {
     MicroPrintf("Invoke failed.");
   }
 
-  detect_time = (esp_timer_get_time() - detect_time)/1000;
-  MicroPrintf("Time required for the inference is %u ms", detect_time);
-
   TfLiteTensor* output = interpreter->output(0);
-  printTensorDimensions(output);
-
-  std::vector<Prediction> predictions;
-  convertOutputToFloat(output, predictions);
-
-  auto nms_predictions = non_maximum_suppression(predictions, 
-          kConfidenceThreshold, kIoUThreshold,
-          kNumCols, kNumRows);
 
   // Process the inference results.
   int8_t person_score = output->data.uint8[kPersonIndex];
@@ -175,66 +138,4 @@ void loop() {
 }
 #endif
 
-#if defined(COLLECT_CPU_STATS)
-  long long total_time = 0;
-  long long start_time = 0;
-  extern long long softmax_total_time;
-  extern long long dc_total_time;
-  extern long long conv_total_time;
-  extern long long fc_total_time;
-  extern long long pooling_total_time;
-  extern long long add_total_time;
-  extern long long mul_total_time;
-#endif
 
-void run_inference(void *ptr) {
-  /* Convert from uint8 picture data to int8 */
-//   for (int i = 0; i < kNumCols * kNumRows * kNumChannels ; i++) {
-//     input->data.uint8[i] = ((uint8_t *) ptr)[i] ^ 0x80;
-//   }
-
-#if defined(COLLECT_CPU_STATS)
-  long long start_time = esp_timer_get_time();
-#endif
-  // Run the model on this input and make sure it succeeds.
-  if (kTfLiteOk != interpreter->Invoke()) {
-    MicroPrintf("Invoke failed.");
-  }
-
-#if defined(COLLECT_CPU_STATS)
-  long long total_time = (esp_timer_get_time() - start_time);
-  printf("Total time = %lld\n", total_time / 1000);
-  //printf("Softmax time = %lld\n", softmax_total_time / 1000);
-  printf("FC time = %lld\n", fc_total_time / 1000);
-  printf("DC time = %lld\n", dc_total_time / 1000);
-  printf("conv time = %lld\n", conv_total_time / 1000);
-  printf("Pooling time = %lld\n", pooling_total_time / 1000);
-  printf("add time = %lld\n", add_total_time / 1000);
-  printf("mul time = %lld\n", mul_total_time / 1000);
-
-  /* Reset times */
-  total_time = 0;
-  //softmax_total_time = 0;
-  dc_total_time = 0;
-  conv_total_time = 0;
-  fc_total_time = 0;
-  pooling_total_time = 0;
-  add_total_time = 0;
-  mul_total_time = 0;
-#endif
-
-  TfLiteTensor* output = interpreter->output(0);
-
-// print output size
-  printTensorDimensions(output);
-
-  // Process the inference results.
-  int8_t person_score = output->data.uint8[kPersonIndex];
-  int8_t no_person_score = output->data.uint8[kNotAPersonIndex];
-
-  float person_score_f =
-      (person_score - output->params.zero_point) * output->params.scale;
-  float no_person_score_f =
-      (no_person_score - output->params.zero_point) * output->params.scale;
-  RespondToDetection(person_score_f, no_person_score_f);
-}
