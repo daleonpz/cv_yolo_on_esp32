@@ -22,6 +22,7 @@ limitations under the License.
 #include "esp_main.h"
 #include "driver/gpio.h"
 
+#include "ble_service.h"
 #if CLI_ONLY_INFERENCE
 #include "esp_cli.h"
 #endif
@@ -73,17 +74,24 @@ void gpio_led_task(void *pvParameter) {
 // ----------------------------------------------------------------------
 // BLE  with ESP32
 // ----------------------------------------------------------------------
-#include "nimble.h"
-extern "C" void app_main() {
-   startNVS();
-   startBLE();
 
-    xTaskCreate((TaskFunction_t)&vTasksendNotification, "vTasksendNotification", 4096, NULL, 1, NULL);
+void vTasksendNotification(void *pvParameters) {
+    BLE_Service *ble_service = new BLE_Service();
+    ble_service->Start();
+    while (1) {
+        if( ble_service->AreThereSubscribers() ) {
+            ble_service->SendNotification();
+        } else {
+            printf("No one subscribed to notifications\n");
+        }
+        vTaskDelay(2000 / portTICK_PERIOD_MS);
+    }
     vTaskDelete(NULL);
 }
 
-// extern "C" void app_main() {
-// //   xTaskCreate((TaskFunction_t)&tf_main, "tf_main", 10 * 1024, NULL, 8, NULL);
+extern "C" void app_main() {
+//     xTaskCreate((TaskFunction_t)&tf_main, "tf_main", 10 * 1024, NULL, 8, NULL);
 //     xTaskCreate((TaskFunction_t)&gpio_led_task, "gpio_led_task", 1024, NULL, 8, NULL);
-//   vTaskDelete(NULL);
-// }
+    xTaskCreate((TaskFunction_t)&vTasksendNotification, "vTasksendNotification", 4096, NULL, 1, NULL);
+    vTaskDelete(NULL);
+}
