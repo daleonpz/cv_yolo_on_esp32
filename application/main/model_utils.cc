@@ -2,6 +2,13 @@
 #include <algorithm>
 #include <iostream>
 
+void RespondToDetection(float person_score, float no_person_score) {
+    int person_score_int = (person_score) * 100 + 0.5;
+    (void) no_person_score; // unused
+    MicroPrintf("person score:%d%%, no person score %d%%",
+            person_score_int, 100 - person_score_int);
+}
+
 std::vector<float> anchor_to_box(int image_width, int image_height, const Prediction& anchor_box) {
     float x1 = (anchor_box.x - anchor_box.width / 2) * image_width;
     float y1 = (anchor_box.y - anchor_box.height / 2) * image_height;
@@ -87,16 +94,16 @@ std::vector<Prediction> non_maximum_suppression(
 
     // Sort predictions by confidence score (probability)
     std::sort(filtered_predictions.begin(), filtered_predictions.end(), [](const Prediction& a, const Prediction& b) {
-        return a.confidence > b.confidence;
-    });
+            return a.confidence > b.confidence;
+            });
 
     // Apply Non-Maximum Suppression
     filtered_predictions.erase(std::remove_if(filtered_predictions.begin() + 1, 
                 filtered_predictions.end(), 
                 [&filtered_predictions, iou_threshold, image_width, image_height](const Prediction& prediction) {
-        const float iou = calculate_iou(filtered_predictions[0], prediction, image_width, image_height);
-        return iou > iou_threshold;
-    }), filtered_predictions.end());
+                const float iou = calculate_iou(filtered_predictions[0], prediction, image_width, image_height);
+                return iou > iou_threshold;
+                }), filtered_predictions.end());
 
     return filtered_predictions;
 }
@@ -142,3 +149,39 @@ void convertOutputToFloat(const TfLiteTensor* output, std::vector<Prediction>& p
         predictions.push_back(prediction);
     }
 }
+
+
+ // TODO: convert from rgb565 to rgb888
+
+// #if DISPLAY_SUPPORT
+//     // In case if display support is enabled, we initialise camera in rgb mode
+//     // Hence, we need to convert this data to grayscale to send it to tf model
+//     // For display we extra-polate the data to 192X192
+//     for (int i = 0; i < kNumRows; i++) {
+//         for (int j = 0; j < kNumCols; j++) {
+//             uint16_t pixel = ((uint16_t *) (fb->buf))[i * kNumCols + j];
+// 
+//             // for inference
+//             uint8_t hb = pixel & 0xFF;
+//             uint8_t lb = pixel >> 8;
+//             uint8_t r = (lb & 0x1F) << 3;
+//             uint8_t g = ((hb & 0x07) << 5) | ((lb & 0xE0) >> 3);
+//             uint8_t b = (hb & 0xF8);
+// 
+//             /**
+//              * Gamma corected rgb to greyscale formula: Y = 0.299R + 0.587G + 0.114B
+//              * for effiency we use some tricks on this + quantize to [-128, 127]
+//              */
+//             int8_t grey_pixel = ((305 * r + 600 * g + 119 * b) >> 10) - 128;
+// 
+//             image_data[i * kNumCols + j] = grey_pixel;
+// 
+//             // to display
+//             display_buf[2 * i * kNumCols * 2 + 2 * j] = pixel;
+//             display_buf[2 * i * kNumCols * 2 + 2 * j + 1] = pixel;
+//             display_buf[(2 * i + 1) * kNumCols * 2 + 2 * j] = pixel;
+//             display_buf[(2 * i + 1) * kNumCols * 2 + 2 * j + 1] = pixel;
+//         }
+//     }
+// #else // DISPLAY_SUPPORT
+// 

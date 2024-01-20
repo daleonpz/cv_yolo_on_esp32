@@ -50,4 +50,6 @@ float dequantize(uint8_t quantized_value, float scale, int zero_point);
 
 void convertOutputToFloat(const TfLiteTensor* output, std::vector<Prediction>& predictions);
 
+void RespondToDetection(float person_score, float no_person_score);
+
 #endif // __MODEL_UTILS_H__
