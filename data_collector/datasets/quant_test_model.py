@@ -59,7 +59,11 @@ def plot_anchor_boxes(image, anchor_boxes, filename):
         y = ( anchor_box[1] - anchor_box[3] / 2 ) * image_height
         w = anchor_box[2] * image_width
         h = anchor_box[3] * image_height
+        # get class with highest probability
+        class_id = np.argmax(anchor_box[5:])
+        probability = anchor_box[5 + class_id]
         rect = patches.Rectangle((x, y), w, h, linewidth=1, edgecolor='r', facecolor='none')
+        ax.text(x, y, f'{class_id}: {probability:.2f}', color='red')
         ax.add_patch(rect)
     plt.show()  
 
@@ -196,9 +200,13 @@ image_raw, imagef32, imagei8 = parse_image(input_image_path)
 modelf32, q_model = parse_model(model_path, 'int8')
 
 predictionf32 = get_predictionf32(modelf32, imagef32)
+print("-----------------")
+print(f'predictionf32: {predictionf32}')
 plot_anchor_boxes( image_raw, predictionf32, 'outputf32.png' )
 
 predictioni8 = get_predictioni8(q_model, imagei8)
+print("-----------------")
+print(f'predictioni8: {predictioni8}')
 plot_anchor_boxes( image_raw, predictioni8, 'outputi8.png' )
 
 # 
