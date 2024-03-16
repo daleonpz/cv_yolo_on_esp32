@@ -6,6 +6,8 @@ np.set_printoptions(threshold=np.inf)
 
 CONF_THRESHOLD = 0.5
 IOU_THRESHOLD = 0.5
+Q_IUO_THRESHOLD = 0.3
+Q_CONF_THRESHOLD = 0.5
 INPUT_SIZE = 96
 
 # For testing
@@ -204,8 +206,7 @@ def get_predictioni8(model, image):
     candidates = candidates[candidates[:, 2] > 0]
     candidates = candidates[candidates[:, 3] > 0]
 
-    q_pred = non_maximum_suppression(candidates, CONF_THRESHOLD, 0.3, INPUT_SIZE, INPUT_SIZE)
-
+    q_pred = non_maximum_suppression(candidates, Q_CONF_THRESHOLD, Q_IUO_THRESHOLD, INPUT_SIZE, INPUT_SIZE)
     return q_pred
 
 
