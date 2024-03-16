@@ -11,6 +11,8 @@ def get_uploaded_files():
 @app.route('/')
 def index():
     files = get_uploaded_files()
+    # Sort file by name (descending)
+    files.sort(reverse=True)
     return render_template('index.html', files=files)
 
 @app.route('/upload', methods=['GET', 'POST'])
