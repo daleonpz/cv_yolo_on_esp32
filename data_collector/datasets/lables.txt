@@ -1,0 +1,3 @@
+0 'black'
+1 'small'
+2 'big'
