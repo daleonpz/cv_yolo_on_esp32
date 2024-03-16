@@ -37,11 +37,11 @@ with open(annotation_file, "r") as file:
 image_file = annotation_file.replace("labels", "images").replace("txt", "png")
 assert os.path.exists(image_file)
 
-#Load the image
-image = Image.open(image_file)
-
-#Plot the Bounding Box
-plot_bounding_box(image, annotation_list) 
+# #Load the image
+# image = Image.open(image_file)
+# 
+# #Plot the Bounding Box
+# plot_bounding_box(image, annotation_list) 
 
 # Read images and labels
 images = [os.path.join('images', x) for x in os.listdir('images') if x[-3:] == 'png']

@@ -188,9 +188,9 @@ def get_predictioni8(model, image):
 
     return q_pred
 
-input_image_path = 'images/test/037.png'
 
 model_path=sys.argv[1]
+input_image_path=sys.argv[2]
 
 image_raw, imagef32, imagei8 = parse_image(input_image_path)
 modelf32, q_model = parse_model(model_path, 'int8')
