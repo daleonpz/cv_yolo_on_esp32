@@ -2,12 +2,21 @@ import numpy as np
 import tensorflow as tf
 from PIL import Image
 import sys
+np.set_printoptions(threshold=np.inf)
 
 CONF_THRESHOLD = 0.5
 IOU_THRESHOLD = 0.5
 INPUT_SIZE = 96
 
 # For testing
+# def representative_dataset():
+#     dataset_path = 'images/val'
+#     datagen = tf.keras.preprocessing.image.ImageDataGenerator(rescale=1./255)
+#     dataset = datagen.flow_from_directory(dataset_path, target_size=(96, 96), batch_size=32, class_mode=None, shuffle=False)
+# 
+#     for imagebatch in dataset:
+#         yield [imagebatch.astype(np.float32)]
+
 def representative_dataset(): # TODO: improve this, may impact accuracy
     for _ in range(100):
           data = np.random.rand(1, 96, 96, 3)
@@ -80,6 +89,8 @@ def anchor_to_box(image_width, image_height, anchor_box):
 
 def non_maximum_suppression(predictions, confidence_threshold=0.5, iou_threshold=0.5, image_width=416, image_height=416):
     # Define a helper function to calculate IoU (Intersection over Union)
+    print(f'predictions.shape: {predictions.shape}')
+    print(f'predictions: {predictions}')
     def calculate_iou(prediction1, prediction2):
         # Calculate intersection coordinates
         box1 = anchor_to_box(image_width, image_height, prediction1)
@@ -102,7 +113,7 @@ def non_maximum_suppression(predictions, confidence_threshold=0.5, iou_threshold
 
         # Calculate IoU
         iou = intersection / union
-        print(f'iou: {iou}')
+#         print(f'iou: {iou}')
         return iou
 
     # Filter predictions based on confidence threshold
@@ -115,6 +126,7 @@ def non_maximum_suppression(predictions, confidence_threshold=0.5, iou_threshold
     selected_predictions = []
     while len(filtered_predictions) > 0:
         selected_predictions.append(filtered_predictions[0])
+        print(f'selected_predictions: {selected_predictions}')
 
         # Remove the selected prediction
         del filtered_predictions[0]
@@ -188,6 +200,10 @@ def get_predictioni8(model, image):
     out = np.array(out)/255.0
 
     candidates = out[out[:, :, 4] >= CONF_THRESHOLD]
+    # delete candidates where w and h are 0, due to quantization
+    candidates = candidates[candidates[:, 2] > 0]
+    candidates = candidates[candidates[:, 3] > 0]
+
     q_pred = non_maximum_suppression(candidates, CONF_THRESHOLD, 0.3, INPUT_SIZE, INPUT_SIZE)
 
     return q_pred
