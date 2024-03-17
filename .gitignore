@@ -40,6 +40,7 @@ TAGS
 
 # Related to ESP-IDF
 build
+build_test
 managed_components
 sdkconfig
 sdkconfig.old
