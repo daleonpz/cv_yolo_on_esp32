@@ -33,7 +33,6 @@ TEST(ModelUtilsTest, CalculateIouTest) {
     ASSERT_NEAR(result, expected_output, kTolerance);
 }
 
-
 TEST(ModelUtilsTest, NonMaximumSuppressionTest) {
     // Create sample predictions for testing
     std::vector<Prediction> predictions = { 
@@ -81,6 +80,57 @@ TEST(ModelUtilsTest, NonMaximumSuppressionTest) {
             ASSERT_NEAR(result[i].class_confidences[j], expected_output[i].class_confidences[j], kTolerance);
         }
     }
+}
+
+TEST(ModelUtilsTest, GetDetectionClassesTest) {
+    std::vector<Prediction> predictions = {
+        { 0.21960784, 0.3137255, 0.18039216, 0.12941177, 0.85882354, {0.00784314, 0.6431373, 0.6745098} },
+        { 0.627451, 0.3764706, 0.18039216, 0.12941177, 0.80784315, {0.00784314, 0.65882355, 0.5568628} },
+        { 0.4392157, 0.59607846, 0.18039216, 0.12941177, 0.59607846, {0.01960784, 0.6313726, 0.5019608} }
+    };
+
+    // Perform get detection classes
+    std::vector<float> result = get_detection_classes(predictions, 0.5);
+
+    // Validate the result based on your expectations
+    std::vector<float> expected_output = { 2, 1, 1 };
+
+    ASSERT_EQ(result.size(), expected_output.size());  // Replace with your expected result size
+    ASSERT_EQ(result, expected_output);
+}
+
+TEST(ModelUtilsTest, NoClassConfidencesTest) {
+    std::vector<Prediction> predictions = {
+        { 0.21960784, 0.3137255, 0.18039216, 0.12941177, 0.85882354, {} },
+        { 0.627451, 0.3764706, 0.18039216, 0.12941177, 0.80784315, {} },
+        { 0.4392157, 0.59607846, 0.18039216, 0.12941177, 0.59607846, {} }
+    };
+
+    // Perform get detection classes
+    std::vector<float> result = get_detection_classes(predictions, 0.5);
+
+    // Validate the result based on your expectations
+    std::vector<float> expected_output = {};
+
+    ASSERT_EQ(result.size(), expected_output.size());  // Replace with your expected result size
+    ASSERT_EQ(result, expected_output);
+}
+
+TEST(ModelUtilsTest, ClassDetectionConfidenceBelowThreshold){
+    std::vector<Prediction> predictions = {
+        { 0.21960784, 0.3137255, 0.18039216, 0.12941177, 0.85882354, {0.00784314, 0.6431373, 0.6745098} },
+        { 0.627451, 0.3764706, 0.18039216, 0.12941177, 0.80784315, {0.00784314, 0.65882355, 0.5568628} },
+        { 0.4392157, 0.59607846, 0.18039216, 0.12941177, 0.59607846, {0.01960784, 0.6313726, 0.5019608} }
+    };
+
+    // Perform get detection classes
+    std::vector<float> result = get_detection_classes(predictions, 0.9);
+
+    // Validate the result based on your expectations
+    std::vector<float> expected_output = {};
+
+    ASSERT_EQ(result.size(), expected_output.size());  // Replace with your expected result size
+    ASSERT_EQ(result, expected_output);
 }
 
 // TODO: this when there are zeros in width or height

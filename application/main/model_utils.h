@@ -45,6 +45,15 @@ std::vector<Prediction> non_maximum_suppression(const std::vector<Prediction>& p
         int image_width = 416, 
         int image_height = 416);
 
+enum class DetectionClass {
+    kBlack = 0,
+    kSmall = 1,
+    kBig = 2
+};
+
+std::vector<float> get_detection_classes(const std::vector<Prediction>& predictions, 
+        float confidence_threshold = 0.5);
+
 #ifndef UNIT_TESTING
 void printTensorDimensions(TfLiteTensor* tensor);
 float dequantize(uint8_t quantized_value, float scale, int zero_point);

@@ -71,6 +71,22 @@ std::vector<Prediction> non_maximum_suppression(const std::vector<Prediction>& p
     return selected_predictions;
 }
 
+std::vector<float> get_detection_classes(const std::vector<Prediction>& predictions, 
+        float confidence_threshold)
+{
+    std::vector<float> detection_classes = {};
+    for (const auto& prediction : predictions) {
+        auto max_it = std::max_element(prediction.class_confidences.begin(), prediction.class_confidences.end());
+        float max_confidence = max_it != prediction.class_confidences.end() ? *max_it : -1.0f;
+
+        if (prediction.confidence >= confidence_threshold && max_confidence > 0.0f) {
+            detection_classes.push_back(std::distance(prediction.class_confidences.begin(), max_it));
+            continue;
+        }
+    }
+    return detection_classes;
+}
+
 #ifndef UNIT_TESTING
 void printTensorDimensions(TfLiteTensor* tensor) {
     MicroPrintf("Tensor Rank: %d\n", tensor->dims->size);
