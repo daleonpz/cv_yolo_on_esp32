@@ -2,13 +2,6 @@
 #include <algorithm>
 #include <iostream>
 
-void RespondToDetection(float person_score, float no_person_score) {
-    int person_score_int = (person_score) * 100 + 0.5;
-    (void) no_person_score; // unused
-    MicroPrintf("person score:%d%%, no person score %d%%",
-            person_score_int, 100 - person_score_int);
-}
-
 std::vector<float> anchor_to_box(int image_width, int image_height, const Prediction& anchor_box) {
     float x1 = (anchor_box.x - anchor_box.width / 2) * image_width;
     float y1 = (anchor_box.y - anchor_box.height / 2) * image_height;
@@ -34,81 +27,51 @@ float calculate_iou(const Prediction& prediction1, const Prediction& prediction2
     float union_area = area_box1 + area_box2 - intersection;
 
     float iou = intersection / union_area;
-    std::cout << "iou: " << iou << std::endl;
+//     std::cout << "iou: " << iou << std::endl;
     return iou;
 }
 
-// std::vector<Prediction> non_maximum_suppression(const std::vector<Prediction>& predictions, 
-//         float confidence_threshold, 
-//         float iou_threshold, 
-//         int image_width, int image_height) {
-// 
-//     std::vector<Prediction> filtered_predictions;
-//     for (const auto& prediction : predictions) {
-//         if (prediction.confidence >= confidence_threshold) {
-//             filtered_predictions.push_back(prediction);
-//         }
-//     }
-// 
-//     std::sort(filtered_predictions.begin(), filtered_predictions.end(), [](const Prediction& a, const Prediction& b) {
-//         return a.confidence > b.confidence;
-//     });
-// 
-//     std::vector<Prediction> selected_predictions;
-//     while (!filtered_predictions.empty()) {
-//         selected_predictions.push_back(filtered_predictions[0]);
-//         filtered_predictions.erase(filtered_predictions.begin());
-// 
-//         std::vector<float> iou_values;
-//         for (const auto& prediction : filtered_predictions) {
-//             iou_values.push_back(calculate_iou(selected_predictions.back(), prediction, image_width, image_height));
-//         }
-//         std::cout << "len(iou): " << iou_values.size() << std::endl;
-//         std::cout << "iou: ";
-//         for (const auto& iou : iou_values) {
-//             std::cout << iou << " ";
-//         }
-//         std::cout << std::endl;
-// 
-//         filtered_predictions.erase(std::remove_if(filtered_predictions.begin(), filtered_predictions.end(), [&filtered_predictions, iou_threshold, &iou_values](const Prediction& prediction) {
-//             return iou_values[&prediction - &filtered_predictions[0]] > iou_threshold;
-//         }), filtered_predictions.end());
-//     }
-// 
-//     return selected_predictions;
-// }
-
-std::vector<Prediction> non_maximum_suppression(
-        const std::vector<Prediction>& predictions, 
+std::vector<Prediction> non_maximum_suppression(const std::vector<Prediction>& predictions, 
         float confidence_threshold, 
         float iou_threshold, 
         int image_width, int image_height) {
-    // Filter predictions based on confidence threshold
+
     auto is_confident = [confidence_threshold](const Prediction& prediction) {
         return prediction.confidence >= confidence_threshold;
     };
 
     // The filtering based on confidence threshold is done using std::partition, which rearranges elements in the vector, putting elements satisfying the condition (is_confident) to the front. This avoids the need for an additional std::remove_if call
-    std::vector<Prediction> filtered_predictions(predictions.begin(), 
-            std::partition(predictions.begin(), predictions.end(), is_confident));
+    std::vector<Prediction> filtered_predictions(predictions.begin(), std::partition(predictions.begin(), predictions.end(), is_confident));
 
-    // Sort predictions by confidence score (probability)
     std::sort(filtered_predictions.begin(), filtered_predictions.end(), [](const Prediction& a, const Prediction& b) {
-            return a.confidence > b.confidence;
-            });
+        return a.confidence > b.confidence;
+    });
 
-    // Apply Non-Maximum Suppression
-    filtered_predictions.erase(std::remove_if(filtered_predictions.begin() + 1, 
-                filtered_predictions.end(), 
-                [&filtered_predictions, iou_threshold, image_width, image_height](const Prediction& prediction) {
-                const float iou = calculate_iou(filtered_predictions[0], prediction, image_width, image_height);
-                return iou > iou_threshold;
-                }), filtered_predictions.end());
+    std::vector<Prediction> selected_predictions;
+    while (!filtered_predictions.empty()) {
+        selected_predictions.push_back(filtered_predictions[0]);
+        filtered_predictions.erase(filtered_predictions.begin());
 
-    return filtered_predictions;
+        std::vector<float> iou_values;
+        for (const auto& prediction : filtered_predictions) {
+            iou_values.push_back(calculate_iou(selected_predictions.back(), prediction, image_width, image_height));
+        }
+        std::cout << "len(iou): " << iou_values.size() << std::endl;
+        std::cout << "iou: ";
+        for (const auto& iou : iou_values) {
+            std::cout << iou << " ";
+        }
+        std::cout << std::endl;
+
+        filtered_predictions.erase(std::remove_if(filtered_predictions.begin(), filtered_predictions.end(), [&filtered_predictions, iou_threshold, &iou_values](const Prediction& prediction) {
+            return iou_values[&prediction - &filtered_predictions[0]] > iou_threshold;
+        }), filtered_predictions.end());
+    }
+
+    return selected_predictions;
 }
 
-
+#ifndef UNIT_TESTING
 void printTensorDimensions(TfLiteTensor* tensor) {
     MicroPrintf("Tensor Rank: %d\n", tensor->dims->size);
 
@@ -150,6 +113,13 @@ void convertOutputToFloat(const TfLiteTensor* output, std::vector<Prediction>& p
     }
 }
 
+void RespondToDetection(float person_score, float no_person_score) {
+    int person_score_int = (person_score) * 100 + 0.5;
+    (void) no_person_score; // unused
+    MicroPrintf("person score:%d%%, no person score %d%%",
+            person_score_int, 100 - person_score_int);
+}
+#endif // UNIT_TESTING
 
  // TODO: convert from rgb565 to rgb888
 

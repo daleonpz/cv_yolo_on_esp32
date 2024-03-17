@@ -82,10 +82,14 @@ def plot_anchor_boxes(image, anchor_boxes, filename):
     fig.savefig(filename, bbox_inches='tight')
 
 def anchor_to_box(image_width, image_height, anchor_box):
+#     print(f"*"*30)
+#     print(f'image_width: {image_width}, image_height: {image_height}')
+#     print(f'anchor_box: {anchor_box}')
     x1 = ( anchor_box[0] - anchor_box[2] / 2 ) * image_width
     y1 = ( anchor_box[1] - anchor_box[3] / 2 ) * image_height
     x2 = ( anchor_box[0] + anchor_box[2] / 2 ) * image_width
     y2 = ( anchor_box[1] + anchor_box[3] / 2 ) * image_height
+#     print(f'x1: {x1}, y1: {y1}, x2: {x2}, y2: {y2}')
     return [x1, y1, x2, y2]
 
 
@@ -94,6 +98,9 @@ def non_maximum_suppression(predictions, confidence_threshold=0.5, iou_threshold
     print(f'predictions.shape: {predictions.shape}')
     print(f'predictions: {predictions}')
     def calculate_iou(prediction1, prediction2):
+#         print(f'***'*10)
+#         print(f'prediction1: {prediction1}')
+#         print(f'prediction2: {prediction2}')
         # Calculate intersection coordinates
         box1 = anchor_to_box(image_width, image_height, prediction1)
         box2 = anchor_to_box(image_width, image_height, prediction2)
@@ -205,6 +212,9 @@ def get_predictioni8(model, image):
     # delete candidates where w and h are 0, due to quantization
     candidates = candidates[candidates[:, 2] > 0]
     candidates = candidates[candidates[:, 3] > 0]
+
+    # convert candidates to float
+    candidates = candidates.astype(np.float32)
 
     q_pred = non_maximum_suppression(candidates, Q_CONF_THRESHOLD, Q_IUO_THRESHOLD, INPUT_SIZE, INPUT_SIZE)
     return q_pred

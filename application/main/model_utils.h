@@ -4,7 +4,9 @@
 #include <vector>
 #include <iostream>
 #include <algorithm>
+#ifndef UNIT_TESTING
 #include "tensorflow/lite/micro/micro_interpreter.h"
+#endif // UNIT_TESTING
 
 struct Prediction {
     float x;
@@ -43,13 +45,11 @@ std::vector<Prediction> non_maximum_suppression(const std::vector<Prediction>& p
         int image_width = 416, 
         int image_height = 416);
 
-
+#ifndef UNIT_TESTING
 void printTensorDimensions(TfLiteTensor* tensor);
-
 float dequantize(uint8_t quantized_value, float scale, int zero_point);
-
 void convertOutputToFloat(const TfLiteTensor* output, std::vector<Prediction>& predictions);
-
 void RespondToDetection(float person_score, float no_person_score);
+#endif
 
 #endif // __MODEL_UTILS_H__
