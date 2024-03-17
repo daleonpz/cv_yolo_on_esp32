@@ -66,6 +66,7 @@ for (int i = 0; i < image_width * image_height; i++) {
         image_data[i] = ((uint8_t *) fb->buf)[i] ^ 0x80;
 //         image_data[i] = ((uint8_t *) fb->buf)[i];
     }
+// TODO: convert from rgb565 to rgb888
     esp_camera_fb_return(fb);
     /* here the esp camera can give you grayscale image directly */
     return kTfLiteOk;
