@@ -2,6 +2,10 @@
 
 namespace {
     const float kTolerance = 1e-5;
+    const float kConfidenceThreshold = 0.5;
+    const float kIouThreshold = 0.3;
+    const int kImageWidth = 96;
+    const int kImageHeight = 96;
 }
 
 
@@ -9,7 +13,7 @@ TEST(ModelUtilsTest, AnchorToBox) {
     // Create sample anchor box for testing
     Prediction anchor_box = { 0.4392157, 0.59607846, 0.18039216, 0.12941177, 0.5019608, {0.01960784, 0.57254905, 0.48235294} };
     // Perform anchor to box conversion
-    std::vector<float> result = anchor_to_box(96, 96, anchor_box);
+    std::vector<float> result = anchor_to_box(kImageWidth, kImageHeight, anchor_box);
     // Validate the result based on your expectations
     std::vector<float> expected_output = { 33.505882, 51.011765, 50.82353, 63.435295 };
 
@@ -26,7 +30,7 @@ TEST(ModelUtilsTest, CalculateIou) {
     Prediction prediction1 = { 0.4392157, 0.59607846, 0.1764706, 0.1254902, 0.6156863, {0.01960784, 0.62352943, 0.5019608} };
     Prediction prediction2 = { 0.4392157, 0.59607846, 0.15294118, 0.16470589, 0.54901963, {0.01960784, 0.5803922, 0.50980395} };
     // Perform IOU calculation
-    float result = calculate_iou(prediction1, prediction2, 96, 96);
+    float result = calculate_iou(prediction1, prediction2, kImageWidth, kImageHeight);
     // Validate the result based on your expectations
     float expected_output = 0.6980392;
 
@@ -57,7 +61,7 @@ TEST(ModelUtilsTest, NonMaximumSuppression) {
     };
 
     // Perform non-maximum suppression
-    std::vector<Prediction> result = non_maximum_suppression(predictions, 0.5, 0.3, 96, 96);
+    std::vector<Prediction> result = non_maximum_suppression(predictions, kConfidenceThreshold, kIouThreshold, kImageWidth, kImageHeight);
 
     // Validate the result based on your expectations
     size_t expected_result_size = 3;
@@ -106,7 +110,7 @@ TEST(ModelUtilsTest, NonMaximumSuppressionZeroWidthHeight){
     };
 
     // Perform non-maximum suppression
-    std::vector<Prediction> result = non_maximum_suppression(predictions, 0.5, 0.3, 96, 96);
+    std::vector<Prediction> result = non_maximum_suppression(predictions, kConfidenceThreshold, kIouThreshold, kImageWidth, kImageHeight);
 
     // Validate the result based on your expectations
     size_t expected_result_size = 3;
@@ -181,7 +185,3 @@ TEST(ModelUtilsTest, ClassDetectionConfidenceBelowThreshold){
     ASSERT_EQ(result.size(), expected_output.size());  // Replace with your expected result size
     ASSERT_EQ(result, expected_output);
 }
-
-// TODO: this when there are zeros in width or height
-
-
