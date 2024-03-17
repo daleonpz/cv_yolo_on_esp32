@@ -5,7 +5,7 @@ namespace {
 }
 
 
-TEST(ModelUtilsTest, AnchorToBoxTest) {
+TEST(ModelUtilsTest, AnchorToBox) {
     // Create sample anchor box for testing
     Prediction anchor_box = { 0.4392157, 0.59607846, 0.18039216, 0.12941177, 0.5019608, {0.01960784, 0.57254905, 0.48235294} };
     // Perform anchor to box conversion
@@ -21,7 +21,7 @@ TEST(ModelUtilsTest, AnchorToBoxTest) {
     }
 }
 
-TEST(ModelUtilsTest, CalculateIouTest) {
+TEST(ModelUtilsTest, CalculateIou) {
     // Create sample predictions for testing
     Prediction prediction1 = { 0.4392157, 0.59607846, 0.1764706, 0.1254902, 0.6156863, {0.01960784, 0.62352943, 0.5019608} };
     Prediction prediction2 = { 0.4392157, 0.59607846, 0.15294118, 0.16470589, 0.54901963, {0.01960784, 0.5803922, 0.50980395} };
@@ -33,7 +33,7 @@ TEST(ModelUtilsTest, CalculateIouTest) {
     ASSERT_NEAR(result, expected_output, kTolerance);
 }
 
-TEST(ModelUtilsTest, NonMaximumSuppressionTest) {
+TEST(ModelUtilsTest, NonMaximumSuppression) {
     // Create sample predictions for testing
     std::vector<Prediction> predictions = { 
         { 0.21960784, 0.3137255, 0.16078432, 0.17254902, 0.84705883, {0.00784314, 0.62352943, 0.62352943} },
@@ -65,6 +65,55 @@ TEST(ModelUtilsTest, NonMaximumSuppressionTest) {
         { 0.21960784, 0.3137255, 0.18039216, 0.12941177, 0.85882354, {0.00784314, 0.6431373, 0.6745098} },
         { 0.627451, 0.3764706, 0.18039216, 0.12941177, 0.80784315, {0.00784314, 0.65882355, 0.5568628} },
         { 0.4392157, 0.59607846, 0.18039216, 0.12941177, 0.59607846, {0.01960784, 0.6313726, 0.5019608} }
+    };
+
+    ASSERT_EQ(result.size(), expected_result_size);  // Replace with your expected result size
+
+    // Add more specific validation based on your expectations
+    for( size_t i = 0; i < expected_result_size; i++ ) {
+        ASSERT_NEAR(result[i].x, expected_output[i].x, kTolerance);
+        ASSERT_NEAR(result[i].y, expected_output[i].y, kTolerance);
+        ASSERT_NEAR(result[i].width, expected_output[i].width, kTolerance);
+        ASSERT_NEAR(result[i].height, expected_output[i].height, kTolerance);
+        ASSERT_NEAR(result[i].confidence, expected_output[i].confidence, kTolerance);
+        for( size_t j = 0; j < result[i].class_confidences.size(); j++ ) {
+            ASSERT_NEAR(result[i].class_confidences[j], expected_output[i].class_confidences[j], kTolerance);
+        }
+    }
+}
+
+TEST(ModelUtilsTest, NonMaximumSuppressionZeroWidthHeight){
+    std::vector<Prediction> predictions = { 
+        { 0.21960784, 0.3137255,  0.16078432, 0.0       , 0.827451,     {0.00784314, 0.6156863, 0.6156863}},
+        { 0.21960784, 0.3137255,  0.18431373, 0.13333334, 0.8352941,    {0.00784314, 0.6313726, 0.6666667}},
+        { 0.21960784, 0.3137255,  0.0,        0.0,        0.5019608,    {0.00784314, 0.54509807, 0.64705884}},
+        { 0.21960784, 0.3137255,  0.0,        0.1764706,  0.69803923,   {0.01176471, 0.6, 0.53333336}},
+        { 0.2509804,  0.3137255,  0.18431373, 0.13333334, 0.7294118,    {0.01176471, 0.6, 0.5176471}},
+        { 0.627451,   0.3764706,  0.16078432, 0.1764706,  0.64705884,   {0.02352941, 0.62352943, 0.49019608}},
+        { 0.627451,   0.3764706,  0.18431373, 0.13333334, 0.6666667,    {0.01176471, 0.5176471, 0.49019608}},
+        { 0.21960784, 0.3137255,  0.16078432, 0.1764706,  0.60784316,   {0.03137255, 0.5529412, 0.44313726}},
+        { 0.21960784, 0.3137255,  0.18431373, 0.13333334, 0.6,          {0.02352941, 0.50980395, 0.48235294}},
+        { 0.627451,   0.3764706,  0.16078432, 0.1764706,  0.6901961,    {0.03921569, 0.48235294, 0.5176471}},
+        { 0.627451,   0.3764706,  0.18431373, 0.13333334, 0.65882355,   {0.03921569, 0.5019608, 0.44313726}},
+        { 0.627451,   0.3764706,  0.16078432, 0.1764706,  0.8039216,    {0.00784314, 0.6666667, 0.5529412}},
+        { 0.627451,   0.3764706,  0.18431373, 0.13333334, 0.81960785,   {0.00784314, 0.6392157, 0.5529412}},
+        { 0.4392157,  0.59607846, 0.16078432, 0.1764706,  0.5764706,    {0.01568628, 0.5921569, 0.5176471}},
+        { 0.4392157,  0.59607846, 0.18431373, 0.13333334, 0.54509807,   {0.01568628, 0.5764706, 0.5254902}},
+        { 0.4392157,  0.59607846, 0.16078432, 0.11764706, 0.50980395,   {0.02352941, 0.5921569, 0.48235294}},
+        { 0.4392157,  0.59607846, 0.18431373, 0.13333334, 0.5176471,    {0.01960784, 0.5686275, 0.46666667}},
+        { 0.4392157,  0.59607846, 0.16078432, 0.11764706, 0.60784316,   {0.01568628, 0.6392157, 0.48235294}},
+        { 0.4392157,  0.59607846, 0.18431373, 0.13333334, 0.62352943,   {0.01960784, 0.6392157, 0.49019608}}
+    };
+
+    // Perform non-maximum suppression
+    std::vector<Prediction> result = non_maximum_suppression(predictions, 0.5, 0.3, 96, 96);
+
+    // Validate the result based on your expectations
+    size_t expected_result_size = 3;
+    std::vector<Prediction> expected_output = {
+        { 0.21960784, 0.3137255, 0.18431373, 0.13333334, 0.8352941, {0.00784314, 0.6313726, 0.6666667} },
+        { 0.627451, 0.3764706, 0.18431373, 0.13333334, 0.81960785, {0.00784314, 0.6392157, 0.5529412} },
+        { 0.4392157, 0.59607846, 0.18431373, 0.13333334, 0.62352943, {0.01960784, 0.6392157, 0.49019608} }
     };
 
     ASSERT_EQ(result.size(), expected_result_size);  // Replace with your expected result size

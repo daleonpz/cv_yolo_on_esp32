@@ -36,8 +36,10 @@ std::vector<Prediction> non_maximum_suppression(const std::vector<Prediction>& p
         float iou_threshold, 
         int image_width, int image_height) {
 
+    // some predictions may have width and height equal to 0, we need to filter them out
+    // because they will cause an IoU of 0 with any other prediction, and will be selected in the non-maximum suppression
     auto is_confident = [confidence_threshold](const Prediction& prediction) {
-        return prediction.confidence >= confidence_threshold;
+        return prediction.confidence >= confidence_threshold && prediction.width > 0 && prediction.height > 0;
     };
 
     // The filtering based on confidence threshold is done using std::partition, which rearranges elements in the vector, putting elements satisfying the condition (is_confident) to the front. This avoids the need for an additional std::remove_if call
