@@ -143,10 +143,10 @@ TEST(ModelUtilsTest, GetDetectionClassesTest) {
     };
 
     // Perform get detection classes
-    std::vector<float> result = get_detection_classes(predictions, 0.5);
+    std::vector<uint8_t> result = get_detection_classes(predictions, 0.5);
 
     // Validate the result based on your expectations
-    std::vector<float> expected_output = { 2, 1, 1 };
+    std::vector<uint8_t> expected_output = { 2, 1, 1 };
 
     ASSERT_EQ(result.size(), expected_output.size());  // Replace with your expected result size
     ASSERT_EQ(result, expected_output);
@@ -160,10 +160,10 @@ TEST(ModelUtilsTest, NoClassConfidencesTest) {
     };
 
     // Perform get detection classes
-    std::vector<float> result = get_detection_classes(predictions, 0.5);
+    std::vector<uint8_t> result = get_detection_classes(predictions, 0.5);
 
     // Validate the result based on your expectations
-    std::vector<float> expected_output = {};
+    std::vector<uint8_t> expected_output = {};
 
     ASSERT_EQ(result.size(), expected_output.size());  // Replace with your expected result size
     ASSERT_EQ(result, expected_output);
@@ -177,10 +177,10 @@ TEST(ModelUtilsTest, ClassDetectionConfidenceBelowThreshold){
     };
 
     // Perform get detection classes
-    std::vector<float> result = get_detection_classes(predictions, 0.9);
+    std::vector<uint8_t> result = get_detection_classes(predictions, 0.9);
 
     // Validate the result based on your expectations
-    std::vector<float> expected_output = {};
+    std::vector<uint8_t> expected_output = {};
 
     ASSERT_EQ(result.size(), expected_output.size());  // Replace with your expected result size
     ASSERT_EQ(result, expected_output);
@@ -193,7 +193,7 @@ TEST(ModelUtilsTest, ConvertRGB565ToRGB888) {
     
     // Perform RGB565 to RGB888 conversion
     uint8_t rgb888[24] = { 0 };
-    convert_rbg565_to_rgb888(rgb565, rgb888, 4, 2);
+    convert_rgb565_to_rgb888(rgb565, rgb888, 4, 2);
     
     // Validate the result based on your expectations
     uint8_t expected_output[24] = { 
