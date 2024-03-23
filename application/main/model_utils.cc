@@ -1,6 +1,5 @@
 #include "model_utils.h"
 #include <algorithm>
-#include <iostream>
 
 std::vector<float> anchor_to_box(int image_width, int image_height, const Prediction& anchor_box) {
     float x1 = (anchor_box.x - anchor_box.width / 2) * image_width;
@@ -58,12 +57,6 @@ std::vector<Prediction> non_maximum_suppression(const std::vector<Prediction>& p
         for (const auto& prediction : filtered_predictions) {
             iou_values.push_back(calculate_iou(selected_predictions.back(), prediction, image_width, image_height));
         }
-        std::cout << "len(iou): " << iou_values.size() << std::endl;
-        std::cout << "iou: ";
-        for (const auto& iou : iou_values) {
-            std::cout << iou << " ";
-        }
-        std::cout << std::endl;
 
         filtered_predictions.erase(std::remove_if(filtered_predictions.begin(), filtered_predictions.end(), [&filtered_predictions, iou_threshold, &iou_values](const Prediction& prediction) {
             return iou_values[&prediction - &filtered_predictions[0]] > iou_threshold;
@@ -73,10 +66,10 @@ std::vector<Prediction> non_maximum_suppression(const std::vector<Prediction>& p
     return selected_predictions;
 }
 
-std::vector<float> get_detection_classes(const std::vector<Prediction>& predictions, 
+std::vector<uint8_t> get_detection_classes(const std::vector<Prediction>& predictions, 
         float confidence_threshold)
 {
-    std::vector<float> detection_classes = {};
+    std::vector<uint8_t> detection_classes = {};
     for (const auto& prediction : predictions) {
         auto max_it = std::max_element(prediction.class_confidences.begin(), prediction.class_confidences.end());
         float max_confidence = max_it != prediction.class_confidences.end() ? *max_it : -1.0f;
@@ -140,7 +133,7 @@ void RespondToDetection(float person_score, float no_person_score) {
 #endif // UNIT_TESTING
 
 // rgb565 is MxNx2, uint8_t 
-void convert_rbg565_to_rgb888(uint8_t *rgb565, uint8_t *rgb888, int image_width, int image_height) {
+void convert_rgb565_to_rgb888(uint8_t *rgb565, uint8_t *rgb888, int image_width, int image_height) {
     // this is the C++ version of the conversion
     for (int i = 0; i < image_width * image_height; i++) {
         uint8_t r5 = (rgb565[i * 2] & 0xF8) >> 3;

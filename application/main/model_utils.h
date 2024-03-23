@@ -52,10 +52,10 @@ enum class DetectionClass {
     kBig = 2
 };
 
-std::vector<float> get_detection_classes(const std::vector<Prediction>& predictions, 
+std::vector<uint8_t> get_detection_classes(const std::vector<Prediction>& predictions, 
         float confidence_threshold = 0.5);
 
-void convert_rbg565_to_rgb888(uint8_t *rgb565, uint8_t *rgb888, int image_width, int image_height);
+void convert_rgb565_to_rgb888(uint8_t *rgb565, uint8_t *rgb888, int image_width, int image_height);
 
 #ifndef UNIT_TESTING
 void printTensorDimensions(TfLiteTensor* tensor);
