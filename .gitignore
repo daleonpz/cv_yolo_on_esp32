@@ -1,3 +1,9 @@
+# Project dependend
+outputf32
+outputi8
+quantized_model.tflite
+quantizied_model.cc
+
 # Prerequisites
 *.d
 
