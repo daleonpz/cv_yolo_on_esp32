@@ -76,6 +76,6 @@ extern "C" void app_main() {
     // otherwise, core 0 will be overloaded
     xTaskCreatePinnedToCore((TaskFunction_t)&tf_main, "tf_main", 5 * 1024, NULL, 8, NULL, 0);
     xTaskCreatePinnedToCore((TaskFunction_t)&gpio_led_task, "gpio_led_task", configMINIMAL_STACK_SIZE, NULL, 8, NULL, 1);
-    xTaskCreatePinnedToCore((TaskFunction_t)&vTasksendNotification, "vTasksendNotification", 2*1024, NULL, 2, NULL, 1);
+//     xTaskCreatePinnedToCore((TaskFunction_t)&vTasksendNotification, "vTasksendNotification", 2*1024, NULL, 2, NULL, 1);
     vTaskDelete(NULL);
 }
