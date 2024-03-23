@@ -185,3 +185,23 @@ TEST(ModelUtilsTest, ClassDetectionConfidenceBelowThreshold){
     ASSERT_EQ(result.size(), expected_output.size());  // Replace with your expected result size
     ASSERT_EQ(result, expected_output);
 }
+
+TEST(ModelUtilsTest, ConvertRGB565ToRGB888) {
+    // Create sample RGB565 pixel for testing
+    uint8_t rgb565[16] = { 0x28, 0xc4, 0x28, 0xe4, 0x20, 0xc5, 0x21, 0x05, 
+                           0x28, 0xc5, 0x28, 0xc5, 0x30, 0xc2, 0x30, 0xc1 };
+    
+    // Perform RGB565 to RGB888 conversion
+    uint8_t rgb888[24] = { 0 };
+    convert_rbg565_to_rgb888(rgb565, rgb888, 4, 2);
+    
+    // Validate the result based on your expectations
+    uint8_t expected_output[24] = { 
+        0x29, 0x18, 0x20, 0x29, 0x1c, 0x20, 0x20, 0x18, 0x29, 0x20, 0x20, 0x29,
+        0x29, 0x18, 0x29, 0x29, 0x18, 0x29, 0x31, 0x18, 0x10, 0x31, 0x18, 0x08 };
+
+    // Add more specific validation based on your expectations
+    for (size_t i = 0; i < 24; i++) {
+        ASSERT_EQ(rgb888[i], expected_output[i]);
+    }
+}

@@ -139,37 +139,16 @@ void RespondToDetection(float person_score, float no_person_score) {
 }
 #endif // UNIT_TESTING
 
- // TODO: convert from rgb565 to rgb888
+// rgb565 is MxNx2, uint8_t 
+void convert_rbg565_to_rgb888(uint8_t *rgb565, uint8_t *rgb888, int image_width, int image_height) {
+    // this is the C++ version of the conversion
+    for (int i = 0; i < image_width * image_height; i++) {
+        uint8_t r5 = (rgb565[i * 2] & 0xF8) >> 3;
+        uint8_t g6 = ((rgb565[i * 2] & 0x07) << 3) | ((rgb565[i * 2 + 1] & 0xE0) >> 5);
+        uint8_t b5 = (rgb565[i * 2 + 1] & 0x1F);
 
-// #if DISPLAY_SUPPORT
-//     // In case if display support is enabled, we initialise camera in rgb mode
-//     // Hence, we need to convert this data to grayscale to send it to tf model
-//     // For display we extra-polate the data to 192X192
-//     for (int i = 0; i < kNumRows; i++) {
-//         for (int j = 0; j < kNumCols; j++) {
-//             uint16_t pixel = ((uint16_t *) (fb->buf))[i * kNumCols + j];
-// 
-//             // for inference
-//             uint8_t hb = pixel & 0xFF;
-//             uint8_t lb = pixel >> 8;
-//             uint8_t r = (lb & 0x1F) << 3;
-//             uint8_t g = ((hb & 0x07) << 5) | ((lb & 0xE0) >> 3);
-//             uint8_t b = (hb & 0xF8);
-// 
-//             /**
-//              * Gamma corected rgb to greyscale formula: Y = 0.299R + 0.587G + 0.114B
-//              * for effiency we use some tricks on this + quantize to [-128, 127]
-//              */
-//             int8_t grey_pixel = ((305 * r + 600 * g + 119 * b) >> 10) - 128;
-// 
-//             image_data[i * kNumCols + j] = grey_pixel;
-// 
-//             // to display
-//             display_buf[2 * i * kNumCols * 2 + 2 * j] = pixel;
-//             display_buf[2 * i * kNumCols * 2 + 2 * j + 1] = pixel;
-//             display_buf[(2 * i + 1) * kNumCols * 2 + 2 * j] = pixel;
-//             display_buf[(2 * i + 1) * kNumCols * 2 + 2 * j + 1] = pixel;
-//         }
-//     }
-// #else // DISPLAY_SUPPORT
-// 
+        rgb888[i * 3] = (r5 * 255) / 31;
+        rgb888[i * 3 + 1] = (g6 * 255) / 63;
+        rgb888[i * 3 + 2] = (b5 * 255) / 31;
+    }
+}

@@ -4,6 +4,7 @@
 #include <vector>
 #include <iostream>
 #include <algorithm>
+#include <cstdint>
 #ifndef UNIT_TESTING
 #include "tensorflow/lite/micro/micro_interpreter.h"
 #endif // UNIT_TESTING
@@ -53,6 +54,8 @@ enum class DetectionClass {
 
 std::vector<float> get_detection_classes(const std::vector<Prediction>& predictions, 
         float confidence_threshold = 0.5);
+
+void convert_rbg565_to_rgb888(uint8_t *rgb565, uint8_t *rgb888, int image_width, int image_height);
 
 #ifndef UNIT_TESTING
 void printTensorDimensions(TfLiteTensor* tensor);
