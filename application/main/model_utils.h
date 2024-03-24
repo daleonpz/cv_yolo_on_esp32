@@ -57,10 +57,16 @@ std::vector<uint8_t> get_detection_classes(const std::vector<Prediction>& predic
 
 void convert_rgb565_to_rgb888(uint8_t *rgb565, uint8_t *rgb888, int image_width, int image_height);
 
+float dequantize(uint8_t quantized_value, float scale, int zero_point);
+
+#ifdef UNIT_TESTING
+void convertOutputToFloat(const uint8_t * output, const int num_prediction, std::vector<Prediction>& predictions, int num_classes);
+#else
+void convertOutputToFloat(const TfLiteTensor* output, std::vector<Prediction>& predictions, int num_classes);
+#endif
+
 #ifndef UNIT_TESTING
 void printTensorDimensions(TfLiteTensor* tensor);
-float dequantize(uint8_t quantized_value, float scale, int zero_point);
-void convertOutputToFloat(const TfLiteTensor* output, std::vector<Prediction>& predictions, int num_classes);
 void RespondToDetection(float person_score, float no_person_score);
 #endif
 

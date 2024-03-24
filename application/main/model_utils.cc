@@ -34,7 +34,7 @@ std::vector<Prediction> non_maximum_suppression(const std::vector<Prediction>& p
         float iou_threshold, 
         int image_width, int image_height) {
 
-    MicroPrintf("Number of predictions before confidence threshold: %d\n", predictions.size());
+//     MicroPrintf("Number of predictions before confidence threshold: %d\n", predictions.size());
     // some predictions may have width and height equal to 0, we need to filter them out
     // because they will cause an IoU of 0 with any other prediction, and will be selected in the non-maximum suppression
     auto is_confident = [confidence_threshold](const Prediction& prediction) {
@@ -44,7 +44,7 @@ std::vector<Prediction> non_maximum_suppression(const std::vector<Prediction>& p
     // The filtering based on confidence threshold is done using std::partition, which rearranges elements in the vector, putting elements satisfying the condition (is_confident) to the front. This avoids the need for an additional std::remove_if call
     std::vector<Prediction> filtered_predictions(predictions.begin(), std::partition(predictions.begin(), predictions.end(), is_confident));
 
-    MicroPrintf("Number of predictions before NMS: %d\n", filtered_predictions.size());
+//     MicroPrintf("Number of predictions before NMS: %d\n", filtered_predictions.size());
 
     std::sort(filtered_predictions.begin(), filtered_predictions.end(), [](const Prediction& a, const Prediction& b) {
         return a.confidence > b.confidence;
@@ -75,7 +75,7 @@ std::vector<uint8_t> get_detection_classes(const std::vector<Prediction>& predic
     for (const auto& prediction : predictions) {
         auto max_it = std::max_element(prediction.class_confidences.begin(), prediction.class_confidences.end());
 
-        MicroPrintf("prediction confidence: %f %f %f\n", prediction.class_confidences[0], prediction.class_confidences[1], prediction.class_confidences[2]);
+//         MicroPrintf("prediction confidence: %f %f %f\n", prediction.class_confidences[0], prediction.class_confidences[1], prediction.class_confidences[2]);
 
         if( max_it != prediction.class_confidences.end()) {
             uint8_t idx = std::distance(prediction.class_confidences.begin(), max_it);
@@ -98,43 +98,48 @@ void printTensorDimensions(TfLiteTensor* tensor) {
     MicroPrintf("\n");
     MicroPrintf("Tensor Type: %d, expected 3 (uint8) \n", tensor->type);
 }
+#endif // UNIT_TESTING
 
 float dequantize(uint8_t quantized_value, float scale, int zero_point) {
-//     return  static_cast<float>(quantized_value)/ 255.0f;
-    return scale * (static_cast<float>(quantized_value) - static_cast<float>(zero_point));
+    return  static_cast<float>(quantized_value)/ 255.0f;
+//     return scale * (static_cast<float>(quantized_value) - static_cast<float>(zero_point));
 }
 
+
+#ifdef UNIT_TESTING
+#define OUTPUT_DATA_UINT8  output
+void convertOutputToFloat(const uint8_t * output, const int num_predictions, std::vector<Prediction>& predictions, int num_classes) {
+    const int len_prediction = 5 + num_classes;
+
+    const float scale = 1.0f;
+    const int zero_point = 0;
+#else
+#define OUTPUT_DATA_UINT8  output->data.uint8
 void convertOutputToFloat(const TfLiteTensor* output, std::vector<Prediction>& predictions, int num_classes) {
     const int num_predictions = output->dims->data[1];
+    const int len_prediction = output->dims->data[2];
 
     const float scale = output->params.scale;
     const int zero_point = output->params.zero_point;
+#endif // UNIT_TESTING
 
     predictions.clear();
 
     for (int b = 0; b < num_predictions; ++b) {
         Prediction prediction;
-        prediction.x = dequantize(output->data.uint8[b], scale, zero_point);
-        prediction.y = dequantize(output->data.uint8[b + 1], scale, zero_point);
-        prediction.width = dequantize(output->data.uint8[b + 2], scale, zero_point);
-        prediction.height = dequantize(output->data.uint8[b + 3], scale, zero_point);
-        prediction.confidence = dequantize(output->data.uint8[b + 4], scale, zero_point);
+        prediction.x = dequantize(OUTPUT_DATA_UINT8[b*len_prediction], scale, zero_point);
+        prediction.y = dequantize(OUTPUT_DATA_UINT8[b*len_prediction + 1], scale, zero_point);
+        prediction.width = dequantize(OUTPUT_DATA_UINT8[b*len_prediction + 2], scale, zero_point);
+        prediction.height = dequantize(OUTPUT_DATA_UINT8[b*len_prediction + 3], scale, zero_point);
+        prediction.confidence = dequantize(OUTPUT_DATA_UINT8[b*len_prediction + 4], scale, zero_point);
 
         prediction.class_confidences.clear();
         for (int c = 0; c < num_classes; ++c) {
-            prediction.class_confidences.push_back(dequantize(output->data.uint8[b + 5 + c], scale, zero_point));
+            prediction.class_confidences.push_back(dequantize(OUTPUT_DATA_UINT8[b*len_prediction + 5 + c], scale, zero_point));
         }
         predictions.push_back(prediction);
     }
 }
-
-void RespondToDetection(float person_score, float no_person_score) {
-    int person_score_int = (person_score) * 100 + 0.5;
-    (void) no_person_score; // unused
-    MicroPrintf("person score:%d%%, no person score %d%%",
-            person_score_int, 100 - person_score_int);
-}
-#endif // UNIT_TESTING
 
 // rgb565 is MxNx2, uint8_t 
 void convert_rgb565_to_rgb888(uint8_t *rgb565, uint8_t *rgb888, int image_width, int image_height) {
