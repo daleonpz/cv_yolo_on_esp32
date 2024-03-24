@@ -57,32 +57,10 @@ TfLiteStatus GetImage(int image_width, int image_height, int channels, uint8_t* 
         return kTfLiteError;
     }
 
-    MicroPrintf("RBG565 Image Captured\n");
-
     // Convert RGB565 to RGB888
     convert_rgb565_to_rgb888((uint8_t *) fb->buf, image_data, image_width, image_height);
 
     /* here the esp camera can give you grayscale image directly */
     esp_camera_fb_return(fb);
-    return kTfLiteOk;
-}
-
-// Get an image from the camera module
-TfLiteStatus GetImage(int image_width, int image_height, int channels, int8_t* image_data) {
-    camera_fb_t* fb = esp_camera_fb_get();
-    if (!fb) {
-        ESP_LOGE(TAG, "Camera capture failed");
-        return kTfLiteError;
-    }
-
-    MicroPrintf("Image Captured\n");
-
-    // We have initialised camera to grayscale
-    for (int i = 0; i < image_width * image_height; i++) {
-        image_data[i] = ((uint8_t *) fb->buf)[i] ^ 0x80;
-    }
-
-    esp_camera_fb_return(fb);
-    /* here the esp camera can give you grayscale image directly */
     return kTfLiteOk;
 }

@@ -56,7 +56,6 @@ namespace {
 void setup() {
     // Map the model into a usable data structure. This doesn't involve any
     // copying or parsing, it's a very lightweight operation.
-//     model = tflite::GetModel(g_person_detect_model_data);
     model = tflite::GetModel(g_model);
     if (model->version() != TFLITE_SCHEMA_VERSION) {
         MicroPrintf("Model provided is schema version %d not equal to supported "
@@ -113,11 +112,7 @@ void setup() {
 
     // Get information about the memory area to use for the model's input.
     input = interpreter->input(0);
-
-    // print input tensor dimensions
-    for( int i = 0; i < input->dims->size; i++) {
-        MicroPrintf("Input tensor dimensions: %d", input->dims->data[i]);
-    }
+    printTensorDimensions(input);
 
     // Initialize Camera
     TfLiteStatus init_status = InitCamera();
@@ -147,15 +142,18 @@ void loop() {
     detect_time = (esp_timer_get_time() - detect_time)/1000;
     MicroPrintf("Time required for the inference is %u ms", detect_time);
 
-    TfLiteTensor* output = interpreter->output(0);
-    printTensorDimensions(output);
+    TfLiteTensor* output = interpreter->output(0); // CHECK
+//     printTensorDimensions(output);
 
     std::vector<Prediction> predictions;
-    convertOutputToFloat(output, predictions);
-
+    convertOutputToFloat(output, predictions, kCategoryCount); //<< BUG
+   
     auto nms_predictions = non_maximum_suppression(predictions, 
             kConfidenceThreshold, kIoUThreshold,
             kNumCols, kNumRows);
+    
+    // print number of non-maximum suppressed predictions
+    MicroPrintf("Number of non-maximum suppressed predictions: %d", nms_predictions.size());
 
     auto detection_classes = get_detection_classes(nms_predictions, kConfidenceThreshold);
 
