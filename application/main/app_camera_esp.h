@@ -23,9 +23,8 @@ limitations under the License.
 #include "tensorflow/lite/micro/micro_log.h"
 // #include "tensorflow/lite/c/common.h"
 
-// #define CAMERA_PIXEL_FORMAT  PIXFORMAT_JPEG
 #define CAMERA_FRAME_SIZE    FRAMESIZE_96X96
-#define CAMERA_PIXEL_FORMAT PIXFORMAT_GRAYSCALE
+#define CAMERA_PIXEL_FORMAT PIXFORMAT_RGB565 // gives better quality images
 
 #define CAMERA_MODULE_NAME "ESP-EYE"
 #define CAMERA_PIN_PWDN -1
