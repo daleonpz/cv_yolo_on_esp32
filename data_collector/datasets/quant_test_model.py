@@ -82,25 +82,19 @@ def plot_anchor_boxes(image, anchor_boxes, filename):
     fig.savefig(filename, bbox_inches='tight')
 
 def anchor_to_box(image_width, image_height, anchor_box):
-#     print(f"*"*30)
-#     print(f'image_width: {image_width}, image_height: {image_height}')
-#     print(f'anchor_box: {anchor_box}')
     x1 = ( anchor_box[0] - anchor_box[2] / 2 ) * image_width
     y1 = ( anchor_box[1] - anchor_box[3] / 2 ) * image_height
     x2 = ( anchor_box[0] + anchor_box[2] / 2 ) * image_width
     y2 = ( anchor_box[1] + anchor_box[3] / 2 ) * image_height
-#     print(f'x1: {x1}, y1: {y1}, x2: {x2}, y2: {y2}')
     return [x1, y1, x2, y2]
 
 
 def non_maximum_suppression(predictions, confidence_threshold=0.5, iou_threshold=0.5, image_width=416, image_height=416):
     # Define a helper function to calculate IoU (Intersection over Union)
+    print(f'        BEGIN non_maximum_suppression')
     print(f'predictions.shape: {predictions.shape}')
     print(f'predictions: {predictions}')
     def calculate_iou(prediction1, prediction2):
-#         print(f'***'*10)
-#         print(f'prediction1: {prediction1}')
-#         print(f'prediction2: {prediction2}')
         # Calculate intersection coordinates
         box1 = anchor_to_box(image_width, image_height, prediction1)
         box2 = anchor_to_box(image_width, image_height, prediction2)
@@ -122,7 +116,6 @@ def non_maximum_suppression(predictions, confidence_threshold=0.5, iou_threshold
 
         # Calculate IoU
         iou = intersection / union
-#         print(f'iou: {iou}')
         return iou
 
     # Filter predictions based on confidence threshold
@@ -135,18 +128,16 @@ def non_maximum_suppression(predictions, confidence_threshold=0.5, iou_threshold
     selected_predictions = []
     while len(filtered_predictions) > 0:
         selected_predictions.append(filtered_predictions[0])
-        print(f'selected_predictions: {selected_predictions}')
 
         # Remove the selected prediction
         del filtered_predictions[0]
 
         # Apply NMS
         iou = [calculate_iou(selected_predictions[-1], prediction) for prediction in filtered_predictions]
-        print(f'len(iou): {len(iou)}')
-        print(f'iou: {iou}')
 
         filtered_predictions = [prediction for i, prediction in enumerate(filtered_predictions) if iou[i] < iou_threshold]
-       
+    
+    print(f'        END non_maximum_suppression selected_predictions.shape: {len(selected_predictions)}')
     return selected_predictions
 
 def parse_image(image_path):
@@ -167,7 +158,7 @@ def parse_image(image_path):
 
     imagei8 = image_data_raw.astype(np.uint8)
     imagei8 = np.expand_dims(imagei8, axis=0)
-
+    
     return image, imagef32, imagei8
 
 def parse_model(model_path, tflite_format = 'int8'):
@@ -189,7 +180,14 @@ def get_predictionf32( model, image ):
     # delete all predictions with low confidence score
     # YOLO = [ x, y, w, h, confidence, class1, class2, ... ]
     candidates = out[out[:, :, :, 4] >= CONF_THRESHOLD]
-    pred = non_maximum_suppression(candidates, CONF_THRESHOLD, IOU_THRESHOLD, INPUT_SIZE, INPUT_SIZE)
+    pred_nms  = non_maximum_suppression(candidates, CONF_THRESHOLD, IOU_THRESHOLD, INPUT_SIZE, INPUT_SIZE)
+
+    ## Calculate classes with highest probability
+    pred = []
+    for i in range( len(pred_nms ) ):
+        idx = np.argmax(pred_nms[i][5:])
+        if ( pred_nms[i][5 + idx] > CONF_THRESHOLD ):
+            pred.append(idx)
 
     return pred
 
@@ -202,8 +200,11 @@ def get_predictioni8(model, image):
     output_details = interpreter.get_output_details()
 
     interpreter.set_tensor(input_details[0]['index'], image)
+    # print first 10 bytes of the input tensor
     interpreter.invoke()
     out = interpreter.get_tensor(output_details[0]['index']) # shape 1x432x9
+
+    print(f'Q>>> output_data.shape: {out.shape}')
 
     # convert tuple to numpy array
     out = np.array(out)/255.0
@@ -216,7 +217,14 @@ def get_predictioni8(model, image):
     # convert candidates to float
     candidates = candidates.astype(np.float32)
 
-    q_pred = non_maximum_suppression(candidates, Q_CONF_THRESHOLD, Q_IUO_THRESHOLD, INPUT_SIZE, INPUT_SIZE)
+    q_pred_nms = non_maximum_suppression(candidates, Q_CONF_THRESHOLD, Q_IUO_THRESHOLD, INPUT_SIZE, INPUT_SIZE)
+
+    ## Calculate classes with highest probability
+    q_pred = []
+    for i in range( len(q_pred_nms ) ):
+        idx = np.argmax(q_pred_nms[i][5:])
+        if ( q_pred_nms[i][5 + idx] > Q_CONF_THRESHOLD ):
+            q_pred.append(idx)
     return q_pred
 
 
