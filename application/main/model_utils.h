@@ -60,7 +60,7 @@ void convert_rgb565_to_rgb888(uint8_t *rgb565, uint8_t *rgb888, int image_width,
 #ifndef UNIT_TESTING
 void printTensorDimensions(TfLiteTensor* tensor);
 float dequantize(uint8_t quantized_value, float scale, int zero_point);
-void convertOutputToFloat(const TfLiteTensor* output, std::vector<Prediction>& predictions);
+void convertOutputToFloat(const TfLiteTensor* output, std::vector<Prediction>& predictions, int num_classes);
 void RespondToDetection(float person_score, float no_person_score);
 #endif
 
