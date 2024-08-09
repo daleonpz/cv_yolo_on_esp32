@@ -182,7 +182,7 @@ python detect.py --source ../data_collector/datasets/images/test/ --weights runs
 
 This command runs detection on images from the test dataset and saves the results in the `runs/detect/my_run` directory.
 
-### Model Quantization and Conversion
+### Model Quantization and Conversion using YOLOv5
 
 1. Convert and Quantize the Model:
 
@@ -196,7 +196,7 @@ The quantized model will be saved in the `runs/train/my_run/weights` directory.
 
 **Note:** The output directory will vary each time you retrain the model, so ensure that you update the path as needed.
 
-### Export the Model to a C Array
+### Model Quantization and Conversion using my own script
 
 Convert the Model to a C Array:
 
