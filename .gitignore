@@ -63,4 +63,5 @@ yolov5/
 *.pyc
 __pycache__/
 .python-version
+*.cache
 
