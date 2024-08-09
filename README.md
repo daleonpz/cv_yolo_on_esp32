@@ -214,3 +214,7 @@ This command converts the TFLite model to a C array format, generating a `model.
 
 Once your model is trained, deploy it to the ESP32 by integrating it into the esp32 directory’s codebase. Follow the instructions provided in the ESP-IDF documentation for deploying TensorFlow Lite Micro models on the ESP32.
 
+# TODOS:
+- deployment section
+- update python scripts for better understanding, clean code, and comments
+
