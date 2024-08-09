@@ -276,7 +276,7 @@ For data labeling I used [makesense.ai](https://www.makesense.ai/), you don't ne
 
 This is an example of how the interface should look like:
 
-[Interface](readme_extras/labeling_makesense.png)
+![Interface](readme_extras/labeling_makesense.png)
 
 Now you can start labeling your images, once you have labeled all the images, click on "Actions>Export Annotations" and select the YOLO format.
 Here is a example of the YOLO format: 
