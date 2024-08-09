@@ -1,5 +1,6 @@
 #!/bin/bash
 
+######### WORK IN PROGRESS #########
 cd ../yolov5
 
 # ensure pyenv is initialized
