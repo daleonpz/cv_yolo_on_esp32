@@ -10,9 +10,7 @@ This project focuses on using the ESP-EYE and a computer vision algorithm runnin
 
 Follow the [ESP-IDF Get Started Guide](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/linux-macos-setup.html) to set up the toolchain and install the ESP-IDF framework.
 
-## 2. Data Collection and Model Training
-### Data Collection
-
+## 2. Data Collection 
 Navigate to the `data_collector` folder. Here’s an overview of its structure:
 
 ```shell
@@ -150,7 +148,54 @@ cp ../webserver/static/uploads/* images/
 python3 split_dataset.py
 ```
 
-## 3. Model Deployment on ESP32
+You should now have inside `images/` and `labels/` the dataset split into `train`, `val`, and `test` directories.
+
+## 3. Model Training
+For model training we will use the [YOLOv5](https://github.com/ultralytics/yolov5) repository from [ultralytics](https://ultralytics.com).
+
+```shell
+cd yolov5/
+python train.py --img 93 --cfg ../trainer/model.yaml --batch 32 --epochs 300 --data ../trainer/model_data.yaml --name my_run
+```
+
+Model training will take some time. After training, the best model will be saved in the `runs/train/my_run/weights` directory.
+
+To test the model on the test dataset:
+
+```shell
+python detect.py --source ../data_collector/datasets/images/test/ --weights runs/train/my_run/weights/best.pt --img 96 --name my_run --data ../trainer/model_data.yaml
+```
+
+The results will be saved in the `runs/detect/my_run` directory.
+
+### Model Quantization and Conversion
+
+export the best model to the tflite format and quantize it
+
+```shell
+python export.py --weights runs/train/my_run/weights/best.pt --include saved_model tflite --img 96 --data ../trainer/model_data.yaml
+```
+
+The quantized model will be saved in the `runs/train/my_run/weights` directory.
+
+**NOTE:** Everytime you retrain the model the output directory will be different, so make sure to change the path accordingly.
+
+### Export the Model to a C Array
+
+go to `data_collector/datasets/` and run the following command to convert the model to a C array
+
+```shell
+python quant_test_model.py ../../yolov5/runs/train/my_run/weights/best_saved_model/ images/test/<image_name>.jpg
+```
+
+You will get a 'model.cc' file that you can use to deploy the model on the ESP32, as well a `*.tflite` file that you can use to test the model on your computer.
+
+## 4. Model Deployment on ESP32
 
 Once your model is trained, deploy it to the ESP32 by integrating it into the esp32 directory’s codebase. Follow the instructions provided in the ESP-IDF documentation for deploying TensorFlow Lite Micro models on the ESP32.
 
+
+### files that may not necessarily be in the project
+```shell
+poc_anomaly_manufacturing/data_collector/datasets/quant_test_model.py
+```
