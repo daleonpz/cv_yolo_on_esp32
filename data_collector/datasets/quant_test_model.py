@@ -161,11 +161,41 @@ def parse_image(image_path):
     
     return image, imagef32, imagei8
 
+
+def convert_tflite_to_cpp(tflite_path, cpp_path, array_name="g_model"):
+    with open(tflite_path, 'rb') as f:
+        data = f.read()
+    
+    # Prepare the C++ source file content
+    cpp_content = '#include "model.h"\n'
+    cpp_content += 'alignas(8) const unsigned char {}[] = {{\n'.format(array_name)
+    
+    # Format data in hex
+    hex_data = ', '.join(f'0x{byte:02x}' for byte in data)
+    
+    # Split the data into lines of 36 bytes each
+    hex_lines = [hex_data[i:i+72] for i in range(0, len(hex_data), 72)]
+    # Add the lines to the C++ content
+    cpp_content += '\n'.join('  ' + line for line in hex_lines)
+    cpp_content += '\n};\n'
+    
+    # Add the length of the array
+    cpp_content += f'const int {array_name}_len = {len(data)};\n'
+    
+    # Write the content to the output file
+    with open(cpp_path, 'w') as f:
+        f.write(cpp_content)
+    
+    print(f'Converted {tflite_path} to {cpp_path}')
+
+
 def parse_model(model_path, tflite_format = 'int8'):
     model = tf.saved_model.load(model_path)
 
     if ( tflite_format == 'int8' ):
         q_model = convert_quantized_model_to_tflite(model_path, 'quantized_model.tflite')
+        convert_tflite_to_cpp('quantized_model.tflite', 'model.cc', 'g_model')
+
     else:
         q_model = convert_float_model_to_tflite(model_path, 'float_model.tflite')
 
