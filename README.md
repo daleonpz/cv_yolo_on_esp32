@@ -212,20 +212,41 @@ This command converts the TFLite model to a C array format, generating a `model.
 
 ## 4. Model Deployment on ESP32
 
-Once your model is trained, deploy it to the ESP32 by integrating it into the esp32 directory’s codebase. Follow the instructions provided in the ESP-IDF documentation for deploying TensorFlow Lite Micro models on the ESP32.
+After training and converting your model, you’ll need to deploy it to the ESP32. Follow these steps to integrate the model and flash it onto the ESP32:
 
-1. Copy the `model.cc` file generated in the previous step to the `application/main` directory.
-2. Update the `model_settings.cc` file if your labels are different from the default labels.
-3.. Build and flash the application to the ESP32:
+### Integrate the Model into the ESP32 Codebase
+
+1. Copy the Model File:
+
+Copy the `model.cc` file generated from the previous steps to the `application/main` directory of your ESP32 project.
+
+2. Update Label Settings:
+
+If your labels differ from the default labels, update the `model_settings.cc` file in the `application/main` directory to reflect the new labels.
+
+### Build and Flash the Application
+
+1. Navigate to the Application Directory:
 
 ```bash
 cd application/
+```
+
+2. Set Up the ESP-IDF Environment:
+
+```bash
 get_idf
+```
+
+3. Clean, Build, and Flash the Application:
+
+```bash
 idf.py fullclean
 idf.py build
 idf.py -p /dev/ttyUSB0 flash
 idf.py -p /dev/ttyUSB0 monitor
 ```
+These commands will clean any previous build artifacts, build the application, flash it to the ESP32, and open the serial monitor to view the ESP32's output.
 
-## TODOS:
-- Send results to BLE Client
+## TODOs
+- Send Results to BLE Client: Implement functionality to send the detected screw type results to a BLE client.
