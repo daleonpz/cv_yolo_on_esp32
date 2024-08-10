@@ -250,17 +250,14 @@ def parse_model(model_path, tflite_format="int8"):
     model = tf.saved_model.load(model_path)
 
     if tflite_format == "int8":
-        #         q_model = convert_quantized_model_to_tflite(model_path, 'quantized_model.tflite')
         q_model = convert_quantized_model_to_tflite(
             model_path, OUTPUT_DIR + "/quantized_model.tflite"
         )
-        #         convert_tflite_to_cpp('quantized_model.tflite', 'model.cc', 'g_model')
         convert_tflite_to_cpp(
             OUTPUT_DIR + "/quantized_model.tflite", OUTPUT_DIR + "/model.cc", "g_model"
         )
 
     else:
-        #         q_model = convert_float_model_to_tflite(model_path, 'float_model.tflite')
         q_model = convert_float_model_to_tflite(
             model_path, OUTPUT_DIR + "/float_model.tflite"
         )
