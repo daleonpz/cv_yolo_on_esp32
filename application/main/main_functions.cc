@@ -126,7 +126,6 @@ void setup() {
 }
 
 // The name of this function is important for Arduino compatibility.
-// void loop() {
 void ml_task(QueueHandle_t xQueue) {
   MicroPrintf("Inference loop started\n");
   // Get image from provider.
@@ -163,22 +162,26 @@ void ml_task(QueueHandle_t xQueue) {
   auto detection_classes =
       get_detection_classes(nms_predictions, kConfidenceThreshold);
 
+  //   for (auto detection_class : detection_classes) {
+  //     MicroPrintf("Detected %s", kCategoryLabels[detection_class]);
+  //   }
+
+  //   if (nms_predictions.size() > 0) {
+  //     int value = nms_predictions.size();
+  //     xQueueOverwrite(xQueue, &value);
+  //   }
+  //
+
+  // if there are any "big" objects detected, send a message to the queue
+  bool big_detected = false;
   for (auto detection_class : detection_classes) {
-    MicroPrintf("Detected %s", kCategoryLabels[detection_class]);
+    if (detection_class == 2) {
+      big_detected = true;
+      break;
+    }
   }
 
-  if (nms_predictions.size() > 0) {
-    int value = nms_predictions.size();
-//     xQueueSend(xQueue, &value, 0);
-    xQueueOverwrite(xQueue, &value);
-  }
+  xQueueOverwrite(xQueue, &big_detected);
 
   vTaskDelay(1);  // to avoid watchdog trigger
 }
-
-// void ml_task(QueueHandle_t xQueue) {
-//     int value = 0;
-// //     xQueueSend(xQueue, &value, portMAX_DELAY);
-//     xQueueOverwrite(xQueue, &value);
-//     vTaskDelay(1);
-// }

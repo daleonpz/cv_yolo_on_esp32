@@ -363,7 +363,7 @@ int BLE_Service::bleprph_gap_event(struct ble_gap_event *event, void *arg) {
                event->subscribe.reason, event->subscribe.prev_notify,
                event->subscribe.cur_notify, event->subscribe.cur_notify,
                BLE::nni::notification_handle,  //!! Client Subscribed to
-                                               //!notification_handle
+                                               //! notification_handle
                event->subscribe.prev_indicate, event->subscribe.cur_indicate);
 
       if (event->subscribe.attr_handle == BLE::nni::notification_handle) {
@@ -372,7 +372,7 @@ int BLE_Service::bleprph_gap_event(struct ble_gap_event *event, void *arg) {
         notify_enable_ =
             event->subscribe
                 .cur_notify;  //!! As the client is now subscribed to
-                              //!notifications, the value is set to 1
+                              //! notifications, the value is set to 1
         printf("notify_enable=%d\n", notify_enable_);
       }
 

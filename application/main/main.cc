@@ -18,23 +18,15 @@ limitations under the License.
 #include "esp_log.h"
 #include "esp_system.h"
 #include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
 #include "freertos/queue.h"
+#include "freertos/task.h"
 #include "main_functions.h"
-
 
 #define QUEUE_LENGTH 1
 
 typedef struct {
-    QueueHandle_t xQueue;
+  QueueHandle_t xQueue;
 } TaskParams_t;
-
-// void tf_main(void) {
-//   setup();
-//   while (true) {
-//     loop();
-//   }
-// }
 
 void tf_main(void *pvParameter) {
   TaskParams_t *taskParams = (TaskParams_t *)pvParameter;
@@ -42,7 +34,7 @@ void tf_main(void *pvParameter) {
 
   setup();
   while (true) {
-      ml_task(xQueue);
+    ml_task(xQueue);
   }
 }
 
@@ -66,18 +58,11 @@ void gpio_led_task(void *pvParameter) {
   TaskParams_t *taskParams = (TaskParams_t *)pvParameter;
   QueueHandle_t xQueue = taskParams->xQueue;
 
-//   while (true) {
-//     toggle = !toggle;
-//     gpio_set_level(GPIO_LED_RED, toggle);
-//     gpio_set_level(GPIO_LED_WHITE, toggle);
-//     vTaskDelay(1000 / portTICK_PERIOD_MS);
-//   }
   while (true) {
-    int value = 0;
+    bool value = false;
     // Wait for a message from the queue and toggle the LED
     if (xQueueReceive(xQueue, &value, 0) == pdTRUE) {
-      ESP_LOGI("gpio_led_task", "Received %i", value);
-      toggle = !toggle;
+      toggle = value ? 1 : 0;
       gpio_set_level(GPIO_LED_RED, toggle);
       gpio_set_level(GPIO_LED_WHITE, toggle);
     }
@@ -111,20 +96,14 @@ extern "C" void app_main() {
     return;
   }
 
-//   // xTaskCreatePinnedToCore instead of xTaskCreate to split tasks between cores
-//   // otherwise, core 0 will be overloaded
-//   xTaskCreatePinnedToCore((TaskFunction_t)&tf_main, "tf_main", 5 * 1024, NULL,
-//                           8, NULL, 0);
-//   xTaskCreatePinnedToCore((TaskFunction_t)&gpio_led_task, "gpio_led_task",
-//                           configMINIMAL_STACK_SIZE, NULL, 8, NULL, 1);
-//   //     xTaskCreatePinnedToCore((TaskFunction_t)&vTasksendNotification,
-//   //     "vTasksendNotification", 2*1024, NULL, 2, NULL, 1);
-
-  xTaskCreatePinnedToCore((TaskFunction_t)&tf_main, "tf_main", 5 * 1024, &taskParams,
-                          8, NULL, 0);
+  // xTaskCreatePinnedToCore instead of xTaskCreate to split tasks between cores
+  // otherwise, core 0 will be overloaded
+  xTaskCreatePinnedToCore((TaskFunction_t)&tf_main, "tf_main", 5 * 1024,
+                          &taskParams, 8, NULL, 0);
   xTaskCreatePinnedToCore((TaskFunction_t)&gpio_led_task, "gpio_led_task",
-                            1024*2, &taskParams, 8, NULL, 1);
-//                           configMINIMAL_STACK_SIZE, &taskParams, 8, NULL, 1);
+                          configMINIMAL_STACK_SIZE, &taskParams, 8, NULL, 1);
+  //     xTaskCreatePinnedToCore((TaskFunction_t)&vTasksendNotification,
+  //     "vTasksendNotification", 2*1024, NULL, 2, NULL, 1);
 
   vTaskDelete(NULL);
 }
