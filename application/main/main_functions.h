@@ -15,6 +15,9 @@ limitations under the License.
 
 #ifndef TENSORFLOW_LITE_MICRO_EXAMPLES_PERSON_DETECTION_MAIN_FUNCTIONS_H_
 #define TENSORFLOW_LITE_MICRO_EXAMPLES_PERSON_DETECTION_MAIN_FUNCTIONS_H_
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "freertos/queue.h"
 
 // Expose a C friendly interface for main functions.
 #ifdef __cplusplus
@@ -29,6 +32,7 @@ void setup();
 // repeatedly from the application code. The name needs to be loop() for Arduino
 // compatibility.
 void loop();
+void ml_task(QueueHandle_t xQueue);
 
 #ifdef __cplusplus
 }
