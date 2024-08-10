@@ -16,15 +16,15 @@ limitations under the License.
 #ifndef TENSORFLOW_LITE_MICRO_EXAMPLES_PERSON_DETECTION_ESP_APP_CAMERA_ESP_H_
 #define TENSORFLOW_LITE_MICRO_EXAMPLES_PERSON_DETECTION_ESP_APP_CAMERA_ESP_H_
 
-#include "sensor.h"
 #include "esp_camera.h"
 #include "esp_log.h"
 #include "esp_system.h"
+#include "sensor.h"
 #include "tensorflow/lite/micro/micro_log.h"
 // #include "tensorflow/lite/c/common.h"
 
-#define CAMERA_FRAME_SIZE    FRAMESIZE_96X96
-#define CAMERA_PIXEL_FORMAT PIXFORMAT_RGB565 // gives better quality images
+#define CAMERA_FRAME_SIZE FRAMESIZE_96X96
+#define CAMERA_PIXEL_FORMAT PIXFORMAT_RGB565  // gives better quality images
 
 #define CAMERA_MODULE_NAME "ESP-EYE"
 #define CAMERA_PIN_PWDN -1

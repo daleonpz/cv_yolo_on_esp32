@@ -7,6 +7,6 @@
 #define __MODEL_H__
 
 extern const unsigned char g_model[];
-extern const int g_model_len; 
+extern const int g_model_len;
 
 #endif  // __MODEL_H__

@@ -11,7 +11,6 @@ idf_component_register(
         "model_settings.cc"
         "model_utils.cc"
 		"model.cc"
-#         "person_detect_model_data.cc"
         "app_camera_esp.cc"
         "ble_service.cc"
 
