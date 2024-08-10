@@ -20,8 +20,3 @@ const char* kCategoryLabels[kCategoryCount] = {
     "small",
     "big",
 };
-
-// const char* kCategoryLabels[kCategoryCount] = {
-//     "notperson",
-//     "person",
-// };
