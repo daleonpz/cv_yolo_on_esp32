@@ -1,16 +1,30 @@
+# Description: This script fetches an image from a remote server, converts it to PNG, and uploads it to your server.
+
 import requests
 
 from PIL import Image
 import io
 
-def convert_rgb565_to_png(data): # assumin96x96 image
-    # Convert the image to RGB888
+import logging
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+
+def convert_rgb565_to_png(data):
+    """Convert RGB565 image to PNG
+    It assumes the image is 96x96 pixels.
+    Args:
+        data (bytes): RGB565 image data
+    Returns:
+        bytes: PNG image data
+    """
     rgb888 = bytearray(96 * 96 * 3)
     for i in range(96 * 96):
-        r5 = (data[i * 2] & 0xF8) >> 3 
+        r5 = (data[i * 2] & 0xF8) >> 3
         g6 = ((data[i * 2] & 0x07) << 3) | ((data[i * 2 + 1] & 0xE0) >> 5)
-        b5 = (data[i * 2 + 1] & 0x1F)
-        
+        b5 = data[i * 2 + 1] & 0x1F
+
         rgb888[i * 3] = (r5 * 255) // 31
         rgb888[i * 3 + 1] = (g6 * 255) // 63
         rgb888[i * 3 + 2] = (b5 * 255) // 31
@@ -20,7 +34,14 @@ def convert_rgb565_to_png(data): # assumin96x96 image
         image_png.save(f, format="PNG")
         return f.getvalue()
 
+
 def upload_file(label, remote_url, server_url):
+    """Upload a file to your server
+    Args:
+        label (str): Label for the file
+        remote_url (str): URL of the file to fetch
+        server_url (str): URL of the server to upload the file
+    """
     try:
         # Fetch the image from the remote server without saving it locally
         remote_image_response = requests.get(remote_url)
@@ -36,15 +57,19 @@ def upload_file(label, remote_url, server_url):
             )
 
             if upload_response.status_code == 200:
-                print("Image uploaded successfully to your server!")
+                logger.info(f"Image uploaded successfully to your server!")
             else:
-                print(f"Failed to upload image. Status code: {upload_response.status_code}")
+                logger.error(
+                    f"Failed to upload image. Status code: {upload_response.status_code}"
+                )
 
         else:
-            print(f"Failed to fetch image. Status code: {remote_image_response.status_code}")
+            logger.error(
+                f"Failed to fetch image. Status code: {remote_image_response.status_code}"
+            )
 
     except requests.RequestException as e:
-        print(f"Request Exception: {e}")
+        logger.error(f"Request Exception: {e}")
 
 
 if __name__ == "__main__":
@@ -57,5 +82,3 @@ if __name__ == "__main__":
 
     localserver_url = "http://localhost:5000/upload"
     upload_file(args.file, args.server, localserver_url)
-
-
