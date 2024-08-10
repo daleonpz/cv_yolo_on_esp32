@@ -65,3 +65,5 @@ __pycache__/
 .python-version
 *.cache
 
+results/
+

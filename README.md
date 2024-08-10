@@ -165,7 +165,7 @@ cd yolov5/
 Run the following command to start training:
 
 ```bash
-python train.py --img 96 --cfg ../trainer/model.yaml --batch 32 --epochs 300 --data ../trainer/model_data.yaml --name my_run
+python train.py --img 96 --cfg ../data_collector/model.yaml --batch 32 --epochs 300 --data ../data_collector/model_data.yaml --name my_run
 ```
 
 This command trains the model with the specified image size, configuration file, batch size, number of epochs, and data configuration. The trained model will be saved in the `runs/train/my_run/weights` directory by default.
@@ -177,7 +177,7 @@ This command trains the model with the specified image size, configuration file,
 After training, you can test the model on the test dataset with the following command:
 
 ```bash
-python detect.py --source ../data_collector/datasets/images/test/ --weights runs/train/my_run/weights/best.pt --img 96 --name my_run --data ../trainer/model_data.yaml
+python detect.py --source ../data_collector/datasets/images/test/ --weights runs/train/my_run/weights/best.pt --img 96 --name my_run --data ../data_collector/model_data.yaml
 ```
 
 This command runs detection on images from the test dataset and saves the results in the `runs/detect/my_run` directory.
@@ -189,7 +189,7 @@ This command runs detection on images from the test dataset and saves the result
 Export the trained model to TensorFlow Lite (TFLite) format and apply quantization with the following command:
 
 ```bash
-python export.py --weights runs/train/my_run/weights/best.pt --include saved_model tflite --img 96 --data ../trainer/model_data.yaml
+python export.py --weights runs/train/my_run/weights/best.pt --include saved_model tflite --img 96 --data ../data_collector/model_data.yaml
 ```
 
 The quantized model will be saved in the `runs/train/my_run/weights` directory.
