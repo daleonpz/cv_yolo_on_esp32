@@ -1,6 +1,6 @@
 # Screw Type Detection Using ESP-EYE and TensorFlow Lite Micro
 
-This project focuses on using the ESP-EYE and a computer vision algorithm (YOLOv5) running TensorFlow Lite Micro to detect different types of screws: "Big," "Medium," and "Black." The project consists of two main parts:
+This project focuses on using the ESP-EYE and a computer vision algorithm (YOLOv5) running TensorFlow Lite Micro to detect different types of screws: "Big," "Medium," and "Black."  **The detection is on device, no wireless connection required**. The project consists of two main parts:
 
 1. Data Collection and Model Training
 2. Model Deployment on ESP32
